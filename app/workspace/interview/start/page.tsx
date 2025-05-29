@@ -534,14 +534,14 @@ export default function InterviewStartPage() {
                       <Button
                         variant={interviewStyle === "personality" ? "default" : "ghost"}
                         onClick={() => setInterviewStyle("personality")}
-                        className={`${interviewStyle === "personality" ? "bg-white shadow-sm" : ""}`}
+                        className={`${interviewStyle === "personality" ? "bg-white shadow-sm text-black hover:bg-white hover :shadow-sm hover:text-black" : ""}`}
                       >
                         인성 면접
                       </Button>
                       <Button
                         variant={interviewStyle === "technical" ? "default" : "ghost"}
                         onClick={() => setInterviewStyle("technical")}
-                        className={`${interviewStyle === "technical" ? "bg-white shadow-sm" : ""}`}
+                        className={`${interviewStyle === "technical" ? "bg-white shadow-sm text-black hover:bg-white hover :shadow-sm hover:text-black" : ""}`}
                       >
                         기술 면접
                       </Button>

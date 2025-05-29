@@ -448,7 +448,7 @@ Create and manage cover letters.
 
 마지막으로 내 면접 페이지를 수정하여 시작/수정 버튼을 분리하겠습니다:
 
-```tsx file="app/workspace/interviews/page.tsx"
+\`\`\`tsx file="app/workspace/interviews/page.tsx"
 [v0-no-op-code-block-prefix]"use client"
 
 import { Button } from "@/components/ui/button"
