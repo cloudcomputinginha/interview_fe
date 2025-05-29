@@ -11,9 +11,9 @@ export interface InterviewFormState {
 
   /* step 2 */
   resumeId: string | null;
+  resumeTitle: string;
   coverLetterId: string | null;
-  newCoverLetterTitle: string;
-  newCoverLetterContent: string;
+  coverLetterTitle: string;
 
   /* step 3 */
   voiceType: "female1" | "female2" | "male1" | "male2";
@@ -44,9 +44,9 @@ export const initialFormState: InterviewFormState = {
   sessionName: "",
 
   resumeId: null,
+  resumeTitle: "",
   coverLetterId: null,
-  newCoverLetterTitle: "",
-  newCoverLetterContent: "",
+  coverLetterTitle: "",
 
   voiceType: "female1",
   interviewStyle: "personality",

@@ -6,12 +6,16 @@ import { FileText, Upload, Brain, CalendarIcon, Clock, User } from "lucide-react
 import type { InterviewFormState } from "@/lib/interview/types"
 
 /**
- * 이 컴포넌트는 “개인 면접” 최종 확인 화면입니다.
+ * 이 컴포넌트는 "개인 면접" 최종 확인 화면입니다.
  * resumes / coverLetters 배열은 선택 props로 두어, 상위가 전달하지 않아도 컴파일 에러가 나지 않도록 처리했습니다.
  */
 
-export interface Resume { id: string; name: string }
-export interface CoverLetter { id: string; title: string; content: string }
+export interface Resume { id: string; name: string; url: string }
+export interface CoverLetter {
+    id: string
+    representativeTitle: string
+    items: { title: string; content: string }[]
+}
 
 interface Props {
     form: InterviewFormState
@@ -21,11 +25,8 @@ interface Props {
 }
 
 export default function Step5Individual({ form, resumes = [], coverLetters = [] }: Props) {
-    /* 선택한 자료 이름/내용 파싱 */
-    const resumeName = resumes.find((r) => r.id === form.resumeId)?.name ?? "미선택"
+    const resumeObj = resumes.find((r) => r.id === form.resumeId)
     const coverLetterObj = coverLetters.find((c) => c.id === form.coverLetterId)
-    const coverTitle = coverLetterObj ? coverLetterObj.title : form.newCoverLetterTitle || "직접 입력"
-    const coverContent = coverLetterObj ? coverLetterObj.content : form.newCoverLetterContent
 
     return (
         <div className="space-y-6">
@@ -97,16 +98,22 @@ export default function Step5Individual({ form, resumes = [], coverLetters = [] 
                     <CardContent className="space-y-3 text-sm">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">이력서:</span>
-                            <span className="font-medium">{resumeName}</span>
+                            <span className="font-medium">{form.resumeTitle || (resumeObj ? resumeObj.name : '미선택')}</span>
                         </div>
                         <div>
                             <div className="flex justify-between mb-1">
                                 <span className="text-gray-600">자기소개서:</span>
-                                <span className="font-medium">{coverTitle}</span>
+                                <span className="font-medium">{form.coverLetterTitle || (coverLetterObj ? coverLetterObj.representativeTitle : '미선택')}</span>
                             </div>
-                            <div className="bg-gray-50 p-3 rounded max-h-24 overflow-y-auto whitespace-pre-wrap text-xs">
-                                {coverContent}
-                            </div>
+                            {coverLetterObj && (
+                                <ul className="bg-gray-50 p-3 rounded max-h-32 overflow-y-auto whitespace-pre-wrap text-xs space-y-2">
+                                    {coverLetterObj.items.map((item: any, idx: number) => (
+                                        <li key={idx}>
+                                            <span className="font-semibold">[{item.title}]</span> {item.content}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

@@ -17,14 +17,14 @@ const step1Schema = z.object({
   company: z.string().min(1),
   position: z.string().min(1),
   title: z.string().min(1),
-  sessionName: z.string().min(1).optional(),
+  sessionName: z.string().optional(),
 });
 
 const step2Schema = z.object({
   resumeId: z.string().min(1),
-  coverLetterId: z.string().min(1).optional(),
-  newCoverLetterTitle: z.string().min(1).optional(),
-  newCoverLetterContent: z.string().min(1).optional(),
+  coverLetterId: z.string().min(1),
+  newCoverLetterTitle: z.string().optional(),
+  newCoverLetterContent: z.string().optional(),
 });
 
 /* ───────────────── 훅 본체 ───────────────── */
@@ -58,7 +58,9 @@ export function useInterviewWizard() {
 
   /* 네비게이션 */
   const next = () => {
-    if (!validate()) return;
+    const ok = validate();
+    console.log("🧪 validate", step, ok, form); // ← 추가
+    if (!ok) return;
     if (step < totalSteps) setStep(step + 1);
     else submitMu.mutate(form); // 🔥 최종 제출
   };
