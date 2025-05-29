@@ -25,3 +25,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#yarn
+.yarn
+.yarnrc.yml
+.yarnrc.yml
+.yarn/cache
