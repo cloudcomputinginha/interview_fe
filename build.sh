@@ -1,4 +1,4 @@
 cd ../
 mkdir output
-cp -R ./interview-fe/interview-fe/* ./output
-cp -R ./output ./interview-fe/
+cp -R ./interview_fe/* ./output
+cp -R ./output ./interview_fe/
