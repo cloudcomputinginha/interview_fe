@@ -3,6 +3,8 @@ import {
   ResumeCreateDTO,
   ApiResponseCreateResumeResultDTO,
   ApiResponsePresignedUploadDTO,
+  ApiResponseResumeDetailDTO,
+  ApiResponseResumeListDTO,
 } from "./types/resume-types";
 
 // presigned url 발급
@@ -18,4 +20,16 @@ export async function saveResume(data: ResumeCreateDTO) {
     "/resumes/upload",
     data
   );
+}
+
+// 이력서 상세 조회
+export async function getResumeDetail(resumeId: number, memberId: number) {
+  return serverFetch.get<ApiResponseResumeDetailDTO>(`/resumes/${resumeId}`, {
+    memberId,
+  });
+}
+
+// 이력서 리스트 조회
+export async function getResumeList(memberId: number) {
+  return serverFetch.get<ApiResponseResumeListDTO>("/resumes/", { memberId });
 }

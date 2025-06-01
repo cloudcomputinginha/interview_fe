@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, MoreVertical, Trash2, Edit, Download, FileText, Search, Filter } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -19,6 +19,10 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CommunityLayout } from "@/components/community-layout"
 import { HeaderWithNotifications } from '@/components/header-with-notifications'
+import { useRequireMemberId } from "@/components/member-session-context"
+import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { findMyCoverletter, createCoverletter, getCoverletterDetail } from "@/api/coverletter"
+import { convertDate } from "@/utils/date/convertDate"
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState("resume")
@@ -28,41 +32,45 @@ export default function WorkspacePage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedCoverLetterId, setSelectedCoverLetterId] = useState<number | null>(null)
 
-  // Mock data for resumes and cover letters
-  const resumes = [
-    { id: 1, name: "신입 개발자 이력서.pdf", date: "2023-05-15", size: "1.2MB", type: "resume" },
-    { id: 2, name: "포트폴리오_2023.pdf", date: "2023-04-22", size: "3.5MB", type: "resume" },
-    { id: 3, name: "경력기술서_최종.docx", date: "2023-03-10", size: "890KB", type: "resume" },
-  ]
+  const memberId = useRequireMemberId();
+  const queryClient = useQueryClient()
 
-  const coverLetters = [
-    {
-      id: 1,
-      name: "삼성전자 자기소개서.pdf",
-      date: "2023-05-10",
-      size: "520KB",
-      type: "file",
-      category: "coverLetter",
+  // 자소서 & 이력서 목록 가져오기
+  // TODO : 이력서 API 완성되면 가져오기
+  const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery({
+    queryKey: ["coverLetterList", memberId],
+    queryFn: () => findMyCoverletter(memberId!),
+    enabled: !!memberId,
+    select: (data) => {
+      const coverLetters = data.result?.coverletters;
+      return coverLetters?.map((coverLetter) => ({
+        id: coverLetter.coverletterId,
+        name: `${coverLetter.corporateName}-${coverLetter.jobName}`,
+        corporateName: coverLetter.corporateName,
+        jobName: coverLetter.jobName,
+        date: coverLetter.createdAt,
+        size: "0KB",
+        type: "manual",
+      }))
+    }
+  })
+
+  console.log(coverLetterList, coverLetterListLoading)
+
+  const createCoverletterMutation = useMutation({
+    mutationFn: createCoverletter,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coverLetterList", memberId] })
+      setDialogOpen(false)
+      alert("자기소개서가 성공적으로 등록되었습니다.")
     },
-    {
-      id: 2,
-      name: "네이버 지원 자소서.docx",
-      date: "2023-04-18",
-      size: "450KB",
-      type: "file",
-      category: "coverLetter",
+    onError: () => {
+      alert("자기소개서 등록에 실패했습니다. 다시 시도해주세요.")
     },
-    { id: 3, name: "카카오 인턴십 자소서", date: "2023-03-05", type: "manual", questions: 4, category: "coverLetter" },
-    {
-      id: 4,
-      name: "현대자동차 공채 지원서.pdf",
-      date: "2023-02-20",
-      size: "410KB",
-      type: "file",
-      category: "coverLetter",
-    },
-  ]
+  })
 
   const addQuestionAnswerPair = () => {
     setQuestionAnswerPairs([...questionAnswerPairs, { id: questionAnswerPairs.length + 1, question: "", answer: "" }])
@@ -79,7 +87,7 @@ export default function WorkspacePage() {
   }
 
   // Filter documents based on search and type
-  const filteredDocuments = [...resumes, ...coverLetters].filter((doc) => {
+  const filteredDocuments = coverLetterList?.filter((doc) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType =
       typeFilter === "all" ||
@@ -87,6 +95,8 @@ export default function WorkspacePage() {
       (typeFilter === "coverLetter" && "category" in doc && doc.category === "coverLetter")
     return matchesSearch && matchesType
   })
+
+  if (!memberId) return null
 
   return (
     <>
@@ -113,9 +123,7 @@ export default function WorkspacePage() {
                   <div className="py-4">
                     <CoverLetterForm
                       onSubmit={(data) => {
-                        console.log("Form submitted:", data)
-                        // 실제 저장 로직은 여기에 구현
-                        setDialogOpen(false)
+                        createCoverletterMutation.mutate(data)
                       }}
                       onCancel={() => setDialogOpen(false)}
                     />
@@ -167,22 +175,31 @@ export default function WorkspacePage() {
 
           {/* Documents Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocuments.length > 0 ? (
-              filteredDocuments.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
+            {filteredDocuments && filteredDocuments?.length > 0 ? (
+              filteredDocuments?.map((doc) => (
+                <Card key={doc.name} className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-5 w-fit">
+                    <div className="flex justify-between items-start mb-3 gap-2">
                       <Badge
                         className={
                           "type" in doc && doc.type === "resume"
-                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                            : "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100 whitespace-nowrap"
+                            : "bg-purple-100 text-purple-800 hover:bg-purple-100 whitespace-nowrap"
                         }
                       >
                         {"type" in doc && doc.type === "resume" ? "이력서" : "자기소개서"}
                       </Badge>
-                      <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-                        {"type" in doc && doc.type === "manual" ? "직접 입력" : "파일"}
+                      {/* 기업 배지 */}
+                      <Badge
+                        className="bg-blue-100 text-blue-800 whitespace-nowrap hover:bg-blue-100"
+                      >
+                        {doc.corporateName}
+                      </Badge>
+                      {/* 직무 배지 */}
+                      <Badge
+                        className="bg-purple-100 text-purple-800 whitespace-nowrap hover:bg-purple-100"
+                      >
+                        {doc.jobName}
                       </Badge>
                     </div>
                     <div className="flex items-center mb-3">
@@ -190,9 +207,7 @@ export default function WorkspacePage() {
                       <h3 className="font-medium text-lg line-clamp-1">{doc.name}</h3>
                     </div>
                     <div className="text-sm text-gray-500">
-                      <p>마지막 수정: {doc.date}</p>
-                      {"size" in doc && <p>크기: {doc.size}</p>}
-                      {"questions" in doc && <p>질문 수: {doc.questions}개</p>}
+                      <p>마지막 수정: {convertDate(doc.date!)}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">
@@ -209,16 +224,19 @@ export default function WorkspacePage() {
                             <span>다운로드</span>
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem className="flex items-center">
+                          <DropdownMenuItem className="flex items-center" onClick={() => {
+                            setSelectedCoverLetterId(doc.id!)
+                            setDetailDialogOpen(true)
+                          }}>
                             <FileText className="mr-2 h-4 w-4" />
                             <span>상세 보기</span>
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem className="flex items-center">
+                        <DropdownMenuItem className="flex items-center" onClick={() => alert('아직 지원하지 않는 기능입니다.')}>
                           <Edit className="mr-2 h-4 w-4" />
                           <span>수정</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center text-red-600">
+                        <DropdownMenuItem className="flex items-center text-red-600" onClick={() => alert('아직 지원하지 않는 기능입니다.')}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           <span>삭제</span>
                         </DropdownMenuItem>
@@ -245,6 +263,49 @@ export default function WorkspacePage() {
           </div>
         </div>
       </CommunityLayout>
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>자기소개서 상세보기</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedCoverLetterId ? (
+              <CoverLetterDetailView coverletterId={selectedCoverLetterId} />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+  )
+}
+
+function CoverLetterDetailView({ coverletterId }: { coverletterId: number }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["coverletterDetail", coverletterId],
+    queryFn: () => getCoverletterDetail(coverletterId),
+    enabled: !!coverletterId,
+    select: (res) => res.result,
+  })
+
+  if (isLoading) return <div>불러오는 중...</div>
+  if (isError || !data) return <div>불러오기 실패</div>
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <h2 className="text-xl font-bold mb-2">{data.corporateName} - {data.jobName}</h2>
+        <div className="text-sm text-gray-500 mb-4">생성일: {data.createdAt ? new Date(data.createdAt).toLocaleString() : '-'}</div>
+        {data.qnaList && data.qnaList.length > 0 ? (
+          data.qnaList.map((qna, idx) => (
+            <div key={idx} className="mb-6">
+              <h3 className="font-medium text-lg mb-2">{qna.question}</h3>
+              <p className="text-gray-700 whitespace-pre-line">{qna.answer}</p>
+            </div>
+          ))
+        ) : (
+          <div>질문/답변이 없습니다.</div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

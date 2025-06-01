@@ -1,5 +1,7 @@
 import { serverFetch } from "../utils/fetch/fetch";
 import {
+  InterviewCreateDTO,
+  ApiResponseInterviewCreateResultDTO,
   CreateMemberInterviewDTO,
   ApiResponseCreateMemberInterviewDTO,
   changeMemberStatusDTO,
@@ -7,6 +9,14 @@ import {
   endInterviewRequestDTO,
   ApiResponseInterviewEndResultDTO,
 } from "./types/interview-types";
+
+// 면접 생성
+export async function createInterview(data: InterviewCreateDTO) {
+  return serverFetch.post<
+    ApiResponseInterviewCreateResultDTO,
+    InterviewCreateDTO
+  >("/interviews", data);
+}
 
 // 면접 참여 신청
 export async function createMemberInterview(
