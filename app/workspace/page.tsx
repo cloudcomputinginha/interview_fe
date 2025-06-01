@@ -22,7 +22,9 @@ import { HeaderWithNotifications } from '@/components/header-with-notifications'
 import { useRequireMemberId } from "@/components/member-session-context"
 import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { findMyCoverletter, createCoverletter, getCoverletterDetail } from "@/api/coverletter"
+import { getResumeList, getResumeDetail, getPresignedUploadUrl, saveResume } from "@/api/resume"
 import { convertDate } from "@/utils/date/convertDate"
+import { Progress } from "@/components/ui/progress"
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState("resume")
@@ -34,6 +36,9 @@ export default function WorkspacePage() {
   const [typeFilter, setTypeFilter] = useState("all")
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedCoverLetterId, setSelectedCoverLetterId] = useState<number | null>(null)
+  const [detailResumeDialogOpen, setDetailResumeDialogOpen] = useState(false)
+  const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null)
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
 
   const memberId = useRequireMemberId();
   const queryClient = useQueryClient()
@@ -58,7 +63,38 @@ export default function WorkspacePage() {
     }
   })
 
-  console.log(coverLetterList, coverLetterListLoading)
+  // 이력서 리스트 가져오기
+  const { data: resumeList, isLoading: resumeListLoading } = useQuery({
+    queryKey: ["resumeList", memberId],
+    queryFn: () => getResumeList(memberId!),
+    enabled: !!memberId,
+    select: (data) => {
+      const resumes = data.result?.resumes
+      return resumes?.map((resume) => ({
+        id: resume.resumeId,
+        name: resume.fileName,
+        date: null, // 상세조회에서 가져올 수 있음
+        size: resume.fileSize ? `${(resume.fileSize / 1024).toFixed(1)}KB` : '-',
+        type: "resume",
+      }))
+    },
+  })
+
+  // 문서 통합
+  const allDocuments = [
+    ...(resumeList || []),
+    ...(coverLetterList || []),
+  ]
+
+  // 기존 filteredDocuments를 allDocuments로 변경
+  const filteredDocuments = allDocuments?.filter((doc) => {
+    const matchesSearch = doc.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "resume" && doc.type === "resume") ||
+      (typeFilter === "coverLetter" && doc.type === "manual")
+    return matchesSearch && matchesType
+  })
 
   const createCoverletterMutation = useMutation({
     mutationFn: createCoverletter,
@@ -85,16 +121,6 @@ export default function WorkspacePage() {
   const updateQuestionAnswerPair = (id: number, field: "question" | "answer", value: string) => {
     setQuestionAnswerPairs(questionAnswerPairs.map((pair) => (pair.id === id ? { ...pair, [field]: value } : pair)))
   }
-
-  // Filter documents based on search and type
-  const filteredDocuments = coverLetterList?.filter((doc) => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType =
-      typeFilter === "all" ||
-      (typeFilter === "resume" && "type" in doc && doc.type === "resume") ||
-      (typeFilter === "coverLetter" && "category" in doc && doc.category === "coverLetter")
-    return matchesSearch && matchesType
-  })
 
   if (!memberId) return null
 
@@ -130,7 +156,7 @@ export default function WorkspacePage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" className="text-sm">
+              <Button variant="outline" className="text-sm" onClick={() => setResumeDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> 이력서 업로드
               </Button>
               <Button
@@ -190,17 +216,17 @@ export default function WorkspacePage() {
                         {"type" in doc && doc.type === "resume" ? "이력서" : "자기소개서"}
                       </Badge>
                       {/* 기업 배지 */}
-                      <Badge
-                        className="bg-blue-100 text-blue-800 whitespace-nowrap hover:bg-blue-100"
-                      >
-                        {doc.corporateName}
-                      </Badge>
+                      {doc.type === 'manual' && (
+                        <Badge className="bg-blue-100 text-blue-800 whitespace-nowrap hover:bg-blue-100">
+                          {(doc as any).corporateName}
+                        </Badge>
+                      )}
                       {/* 직무 배지 */}
-                      <Badge
-                        className="bg-purple-100 text-purple-800 whitespace-nowrap hover:bg-purple-100"
-                      >
-                        {doc.jobName}
-                      </Badge>
+                      {doc.type === 'manual' && (
+                        <Badge className="bg-purple-100 text-purple-800 whitespace-nowrap hover:bg-purple-100">
+                          {(doc as any).jobName}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center mb-3">
                       <FileText className="h-5 w-5 text-gray-400 mr-2" />
@@ -225,8 +251,13 @@ export default function WorkspacePage() {
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem className="flex items-center" onClick={() => {
-                            setSelectedCoverLetterId(doc.id!)
-                            setDetailDialogOpen(true)
+                            if (doc.type === 'resume') {
+                              setSelectedResumeId(doc.id!)
+                              setDetailResumeDialogOpen(true)
+                            } else {
+                              setSelectedCoverLetterId(doc.id!)
+                              setDetailDialogOpen(true)
+                            }
                           }}>
                             <FileText className="mr-2 h-4 w-4" />
                             <span>상세 보기</span>
@@ -251,7 +282,7 @@ export default function WorkspacePage() {
                 <p className="text-lg font-medium mb-1">문서가 없습니다</p>
                 <p className="mb-4">새 이력서나 자기소개서를 추가해보세요.</p>
                 <div className="flex justify-center space-x-2">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setResumeDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> 이력서 업로드
                   </Button>
                   <Button variant="outline" onClick={() => setDialogOpen(true)}>
@@ -273,6 +304,34 @@ export default function WorkspacePage() {
               <CoverLetterDetailView coverletterId={selectedCoverLetterId} />
             ) : null}
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={detailResumeDialogOpen} onOpenChange={setDetailResumeDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>이력서 상세보기</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedResumeId ? (
+              <ResumeDetailView resumeId={selectedResumeId} memberId={memberId!} />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>이력서 업로드</DialogTitle>
+            <DialogDescription>PDF 파일을 업로드하세요.</DialogDescription>
+          </DialogHeader>
+          <ResumeUploadDialog
+            memberId={memberId!}
+            onSuccess={() => {
+              setResumeDialogOpen(false)
+              queryClient.invalidateQueries({ queryKey: ["resumeList", memberId] })
+            }}
+            onCancel={() => setResumeDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </>
@@ -307,5 +366,104 @@ function CoverLetterDetailView({ coverletterId }: { coverletterId: number }) {
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function ResumeDetailView({ resumeId, memberId }: { resumeId: number, memberId: number }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["resumeDetail", resumeId],
+    queryFn: () => getResumeDetail(resumeId, memberId),
+    enabled: !!resumeId && !!memberId,
+    select: (res) => res.result,
+  })
+
+  if (isLoading) return <div>불러오는 중...</div>
+  if (isError || !data) return <div>불러오기 실패</div>
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <h2 className="text-xl font-bold mb-2">{data.fileName}</h2>
+        <div className="text-sm text-gray-500 mb-2">업로드일: {data.createdAt ? new Date(data.createdAt).toLocaleString() : '-'}</div>
+        <div className="text-sm text-gray-500 mb-2">파일 크기: {data.fileSize ? `${(data.fileSize / 1024).toFixed(1)}KB` : '-'}</div>
+        {data.fileUrl && (
+          <a href={data.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">다운로드</a>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ResumeUploadDialog({ memberId, onSuccess, onCancel }: { memberId: number, onSuccess: () => void, onCancel: () => void }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
+      setError(null)
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!file) return
+    setIsUploading(true)
+    setProgress(0)
+    setError(null)
+    try {
+      // 1. presigned url 발급
+      const presigned = await getPresignedUploadUrl(file.name)
+      const { presignedUrl, fileUrl } = presigned.result!
+      // 2. S3 업로드
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('PUT', presignedUrl!, true)
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setProgress(Math.round((event.loaded / event.total) * 100))
+          }
+        }
+        xhr.onload = () => {
+          if (xhr.status === 200) resolve()
+          else reject(new Error('S3 업로드 실패'))
+        }
+        xhr.onerror = () => reject(new Error('S3 업로드 실패'))
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+      // 3. 메타데이터 저장
+      await saveResume({
+        memberId,
+        fileName: file.name,
+        fileUrl: fileUrl!,
+        fileSize: file.size,
+      })
+      setProgress(100)
+      onSuccess()
+      alert('이력서가 성공적으로 업로드되었습니다.')
+    } catch (e: any) {
+      setError(e.message || '업로드 실패')
+      alert('업로드에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Input type="file" accept="application/pdf" onChange={handleFileChange} disabled={isUploading} />
+      {progress > 0 && (
+        <Progress value={progress} />
+      )}
+      {error && <div className="text-red-500 text-sm">{error}</div>}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel} disabled={isUploading}>취소</Button>
+        <Button onClick={handleUpload} disabled={!file || isUploading} className="bg-[#8FD694] text-white">
+          {isUploading ? '업로드 중...' : '업로드'}
+        </Button>
+      </div>
+    </div>
   )
 }

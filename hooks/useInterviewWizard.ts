@@ -5,7 +5,8 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { createInterview } from "@/lib/interview/api/interview";
+import { createInterview } from "@/api/interview";
+import type { InterviewCreateDTO } from "@/api/types/interview-types";
 import {
   initialFormState,
   type InterviewFormState,
@@ -27,7 +28,6 @@ const step2Schema = z.object({
   newCoverLetterContent: z.string().optional(),
 });
 
-/* ───────────────── 훅 본체 ───────────────── */
 export function useInterviewWizard() {
   /* 폼 상태 & 스텝 번호 */
   const [form, setForm] = useState<InterviewFormState>(initialFormState);
@@ -41,7 +41,15 @@ export function useInterviewWizard() {
   const submitMu = useMutation({
     mutationFn: createInterview,
     onSuccess: (data) => {
-      router.push(`/workspace/interviews/${data.id}`);
+      const id = (data as any)?.result?.interviewId;
+      if (id) {
+        alert("면접 생성이 완료되었습니다.");
+        console.log("🧪 면접 생성 성공", data);
+        router.push(`/workspace/interviews`);
+      } else {
+        alert("면접 생성은 성공했으나, 인터뷰 ID를 찾을 수 없습니다.");
+        console.error("[면접 생성 성공 but ID 없음]", data);
+      }
     },
     onError: () =>
       alert("면접 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
@@ -62,7 +70,54 @@ export function useInterviewWizard() {
     console.log("🧪 validate", step, ok, form); // ← 추가
     if (!ok) return;
     if (step < totalSteps) setStep(step + 1);
-    else submitMu.mutate(form); // 🔥 최종 제출
+    else {
+      // 🔥 최종 제출: InterviewCreateDTO 변환 및 예외 로깅
+      try {
+        if (!form.resumeId || !form.coverLetterId)
+          throw new Error("이력서/자기소개서가 선택되지 않았습니다.");
+        const payload: InterviewCreateDTO = {
+          name: form.title,
+          description: form.description,
+          corporateName: form.company,
+          jobName: form.position,
+          interviewFormat:
+            form.interviewType === "individual" ? "INDIVIDUAL" : "GROUP",
+          interviewType:
+            form.interviewStyle === "personality" ? "PERSONALITY" : "TECHNICAL",
+          voiceType: (
+            form.voiceType || ""
+          ).toUpperCase() as InterviewCreateDTO["voiceType"],
+          questionNumber: form.questionCount,
+          answerTime: form.answerDuration,
+          startType: form.startType === "now" ? "NOW" : "SCHEDULED",
+          scheduledDate: form.scheduledDate
+            ? typeof form.scheduledDate === "string"
+              ? form.scheduledDate
+              : form.scheduledDate.toISOString().slice(0, 10)
+            : undefined,
+          scheduledTime: form.scheduledTime,
+          maxParticipants: form.maxParticipants
+            ? Number(form.maxParticipants)
+            : undefined,
+          isOpen: form.visibility === "public",
+          resumeId: Number(form.resumeId),
+          resumeTitle: form.resumeTitle,
+          coverLetterId: Number(form.coverLetterId),
+          coverLetterTitle: form.coverLetterTitle,
+          inviteEmailDTOList:
+            form.inviteEmails
+              ?.filter((e) => e.email)
+              .map((e) => ({ email: e.email })) || [],
+        };
+        console.log("[면접 생성 payload]", payload);
+        submitMu.mutate(payload);
+      } catch (err) {
+        alert(
+          "면접 생성 데이터 변환 중 오류가 발생했습니다. 콘솔을 확인해주세요."
+        );
+        console.error("[면접 생성 변환 에러]", err, form);
+      }
+    }
   };
 
   const prev = () => (step > 1 ? setStep(step - 1) : router.back());
