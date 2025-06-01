@@ -1,12 +1,5 @@
 export const convertDate = (date: string) => {
-  if (!date || typeof date !== "string") {
-    throw new Error("Invalid date input");
-  }
-
   const dateObj = new Date(date);
-  if (isNaN(dateObj.getTime())) {
-    throw new Error("Invalid date format");
-  }
 
   const year = dateObj.getFullYear();
   const month = dateObj.getMonth() + 1;
