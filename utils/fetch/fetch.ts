@@ -4,8 +4,15 @@ import {
   UnProcessableError,
 } from "../error/error";
 
-const baseServerURL = "http://localhost:8080";
-const baseAIServerURL = "http://localhost:5000";
+const baseServerURL = process.env.NEXT_PUBLIC_SERVER_URL;
+const baseAIServerURL = process.env.NEXT_PUBLIC_AI_SERVER_URL;
+
+if (!baseServerURL) {
+  throw new Error("환경변수 NEXT_PUBLIC_SERVER_URL이 설정되지 않았습니다.");
+}
+if (!baseAIServerURL) {
+  throw new Error("환경변수 NEXT_PUBLIC_AI_SERVER_URL이 설정되지 않았습니다.");
+}
 
 function createFetch(baseURL: string) {
   const get = async <T>(
