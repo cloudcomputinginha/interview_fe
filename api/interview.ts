@@ -50,3 +50,8 @@ export async function terminateInterview(
     endInterviewRequestDTO
   >(`/interviews/${interviewId}/end`, data);
 }
+
+// 내 인터뷰 리스트 조회
+export async function getMyInterviewList() {
+  return serverFetch.get<any>("/interviews");
+}

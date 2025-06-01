@@ -13,13 +13,10 @@ import {
 import { Input } from "@/components/ui/input"
 import {
     Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+    CardContent
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Plus, Upload } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
+import { Plus } from "lucide-react"
 import type { InterviewFormState } from "@/lib/interview/types"
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -37,12 +34,6 @@ interface Props {
 export default function Step2({ form, setForm }: Props) {
     const queryClient = useQueryClient()
     const memberId = typeof window !== 'undefined' ? Number(localStorage.getItem('memberId')) : undefined
-
-    /* 로컬 UI 토글 상태 (글로벌 폼에 저장할 필요 X) */
-    const [showNewResume, setShowNewResume] = useState(false)
-    const [showNewCoverLetter, setShowNewCoverLetter] = useState(false)
-    const [newResumeFile, setNewResumeFile] = useState('')
-
     // Dialog 상태
     const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
     const [coverLetterDialogOpen, setCoverLetterDialogOpen] = useState(false)
@@ -86,16 +77,6 @@ export default function Step2({ form, setForm }: Props) {
         enabled: !!form.coverLetterId,
         select: (res) => res.result,
     })
-
-    const fileInputRef = useRef<HTMLInputElement>(null)
-    const [isDragActive, setIsDragActive] = useState(false)
-
-    // 자기소개서 작성 상태
-    const [newCoverLetterRepTitle, setNewCoverLetterRepTitle] = useState('')
-    const [newCoverLetterItems, setNewCoverLetterItems] = useState([
-        { title: '', content: '' },
-    ])
-
     // Zod 스키마 (대표제목, items: [{title, content}])
     const coverLetterSchema = z.object({
         representativeTitle: z.string().min(1, '대표 제목을 입력하세요.'),
@@ -110,69 +91,6 @@ export default function Step2({ form, setForm }: Props) {
     /* 편의 패치 함수 */
     const patch = (p: Partial<InterviewFormState>) =>
         setForm((f) => ({ ...f, ...p }))
-
-    // 이력서 mock 업로드 함수
-    const handleNewResumeUpload = () => {
-        if (!newResumeFile) return
-        // mock id/url 생성
-        const newId = `mock-${Date.now()}`
-        const newUrl = `https://mock-resume.com/${newId}.pdf`
-        const newResume = { id: newId, name: newResumeFile, url: newUrl }
-        setResumes((prev) => [...prev, newResume])
-        patch({ resumeId: newId, resumeTitle: newResumeFile }) // id와 파일명 모두 저장
-        alert(`이력서가 업로드되었습니다.\n링크: ${newUrl}`)
-        setNewResumeFile('')
-        setShowNewResume(false)
-    }
-
-    const handleNewCoverLetterSave = () => {
-        const parsed = coverLetterSchema.safeParse({
-            representativeTitle: newCoverLetterRepTitle,
-            items: newCoverLetterItems,
-        })
-        if (!parsed.success) {
-            alert(parsed.error.errors[0].message)
-            return
-        }
-        const newId = `mock-cl-${Date.now()}`
-        const newCoverLetter = {
-            id: newId,
-            representativeTitle: newCoverLetterRepTitle,
-            items: newCoverLetterItems,
-        }
-        setCoverLetters((prev) => [...prev, newCoverLetter])
-        patch({ coverLetterId: newId, coverLetterTitle: newCoverLetterRepTitle }) // id와 대표제목 모두 저장
-        alert('자기소개서가 저장되었습니다.')
-        setNewCoverLetterRepTitle('')
-        setNewCoverLetterItems([{ title: '', content: '' }])
-        setShowNewCoverLetter(false)
-    }
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (file) {
-            setNewResumeFile(file.name)
-        }
-    }
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(false)
-        const file = e.dataTransfer.files?.[0]
-        if (file) {
-            setNewResumeFile(file.name)
-        }
-    }
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(true)
-    }
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(false)
-    }
 
     return (
         <div className="space-y-6">
