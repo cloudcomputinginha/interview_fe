@@ -203,7 +203,7 @@ export default function WorkspacePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments && filteredDocuments?.length > 0 ? (
               filteredDocuments?.map((doc) => (
-                <Card key={doc.name} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5 w-fit">
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <Badge
