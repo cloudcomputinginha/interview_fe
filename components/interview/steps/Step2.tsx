@@ -13,15 +13,18 @@ import {
 import { Input } from "@/components/ui/input"
 import {
     Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+    CardContent
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Plus, Upload } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
+import { Plus } from "lucide-react"
 import type { InterviewFormState } from "@/lib/interview/types"
 import { z } from 'zod'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { getResumeList, getPresignedUploadUrl, saveResume, getResumeDetail } from '@/api/resume'
+import { findMyCoverletter, createCoverletter, getCoverletterDetail } from '@/api/coverletter'
+import { Progress } from '@/components/ui/progress'
+import { CoverLetterForm } from '@/components/cover-letter-form'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 interface Props {
     form: InterviewFormState
@@ -29,45 +32,51 @@ interface Props {
 }
 
 export default function Step2({ form, setForm }: Props) {
-    /* 로컬 UI 토글 상태 (글로벌 폼에 저장할 필요 X) */
-    const [showNewResume, setShowNewResume] = useState(false)
-    const [showNewCoverLetter, setShowNewCoverLetter] = useState(false)
-    const [newResumeFile, setNewResumeFile] = useState('')
+    const queryClient = useQueryClient()
+    const memberId = typeof window !== 'undefined' ? Number(localStorage.getItem('memberId')) : undefined
+    // Dialog 상태
+    const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
+    const [coverLetterDialogOpen, setCoverLetterDialogOpen] = useState(false)
 
-    // 이력서 리스트를 상태로 관리 (업로드 시 추가)
-    const [resumes, setResumes] = useState([
-        { id: '1', name: '신입 개발자 이력서.pdf', url: 'https://mock-resume.com/1.pdf' },
-        { id: '2', name: '포트폴리오_2023.pdf', url: 'https://mock-resume.com/2.pdf' },
-        { id: '3', name: '경력기술서_최종.docx', url: 'https://mock-resume.com/3.docx' },
-    ])
-    const [coverLetters, setCoverLetters] = useState([
-        {
-            id: '1',
-            representativeTitle: '삼성전자 SW개발직군 자기소개서',
-            items: [
-                { title: '성장과정', content: '저는 컴퓨터공학을 전공하며...' },
-                { title: '지원동기', content: '삼성전자에서 혁신적인 기술 개발에...' },
-            ],
-        },
-        {
-            id: '2',
-            representativeTitle: '네이버 백엔드 개발자 자기소개서',
-            items: [
-                { title: '경험', content: '다양한 웹 서비스를 개발하며...' },
-                { title: '포부', content: '네이버의 기술력과 함께 성장하고 싶습니다.' },
-            ],
-        },
-    ])
+    // 이력서 리스트
+    const { data: resumeList = [], isLoading: resumeLoading } = useQuery({
+        queryKey: ['resumeList', memberId],
+        queryFn: () => getResumeList(memberId!),
+        enabled: !!memberId,
+        select: (data) => data.result?.resumes?.map(r => ({
+            id: r.resumeId?.toString(),
+            name: r.fileName,
+            url: undefined // 상세조회에서 필요시 추가
+        })) || []
+    })
 
-    const fileInputRef = useRef<HTMLInputElement>(null)
-    const [isDragActive, setIsDragActive] = useState(false)
+    // 자기소개서 리스트
+    const { data: coverLetterList = [], isLoading: coverLetterLoading } = useQuery({
+        queryKey: ['coverLetterList', memberId],
+        queryFn: () => findMyCoverletter(memberId!),
+        enabled: !!memberId,
+        select: (data) => data.result?.coverletters?.map(cl => ({
+            id: cl.coverletterId?.toString(),
+            representativeTitle: `${cl.corporateName}-${cl.jobName}`,
+            items: [] // 상세조회에서 필요시 추가
+        })) || []
+    })
 
-    // 자기소개서 작성 상태
-    const [newCoverLetterRepTitle, setNewCoverLetterRepTitle] = useState('')
-    const [newCoverLetterItems, setNewCoverLetterItems] = useState([
-        { title: '', content: '' },
-    ])
+    // 이력서 미리보기
+    const { data: resumeDetail, isLoading: resumeDetailLoading } = useQuery({
+        queryKey: ['resumeDetail', form.resumeId, memberId],
+        queryFn: () => getResumeDetail(Number(form.resumeId), memberId!),
+        enabled: !!form.resumeId && !!memberId,
+        select: (res) => res.result,
+    })
 
+    // 자기소개서 미리보기
+    const { data: coverLetterDetail, isLoading: coverLetterDetailLoading } = useQuery({
+        queryKey: ['coverLetterDetail', form.coverLetterId],
+        queryFn: () => getCoverletterDetail(Number(form.coverLetterId)),
+        enabled: !!form.coverLetterId,
+        select: (res) => res.result,
+    })
     // Zod 스키마 (대표제목, items: [{title, content}])
     const coverLetterSchema = z.object({
         representativeTitle: z.string().min(1, '대표 제목을 입력하세요.'),
@@ -83,246 +92,247 @@ export default function Step2({ form, setForm }: Props) {
     const patch = (p: Partial<InterviewFormState>) =>
         setForm((f) => ({ ...f, ...p }))
 
-    // 이력서 mock 업로드 함수
-    const handleNewResumeUpload = () => {
-        if (!newResumeFile) return
-        // mock id/url 생성
-        const newId = `mock-${Date.now()}`
-        const newUrl = `https://mock-resume.com/${newId}.pdf`
-        const newResume = { id: newId, name: newResumeFile, url: newUrl }
-        setResumes((prev) => [...prev, newResume])
-        patch({ resumeId: newId, resumeTitle: newResumeFile }) // id와 파일명 모두 저장
-        alert(`이력서가 업로드되었습니다.\n링크: ${newUrl}`)
-        setNewResumeFile('')
-        setShowNewResume(false)
-    }
-
-    const handleNewCoverLetterSave = () => {
-        const parsed = coverLetterSchema.safeParse({
-            representativeTitle: newCoverLetterRepTitle,
-            items: newCoverLetterItems,
-        })
-        if (!parsed.success) {
-            alert(parsed.error.errors[0].message)
-            return
-        }
-        const newId = `mock-cl-${Date.now()}`
-        const newCoverLetter = {
-            id: newId,
-            representativeTitle: newCoverLetterRepTitle,
-            items: newCoverLetterItems,
-        }
-        setCoverLetters((prev) => [...prev, newCoverLetter])
-        patch({ coverLetterId: newId, coverLetterTitle: newCoverLetterRepTitle }) // id와 대표제목 모두 저장
-        alert('자기소개서가 저장되었습니다.')
-        setNewCoverLetterRepTitle('')
-        setNewCoverLetterItems([{ title: '', content: '' }])
-        setShowNewCoverLetter(false)
-    }
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (file) {
-            setNewResumeFile(file.name)
-        }
-    }
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(false)
-        const file = e.dataTransfer.files?.[0]
-        if (file) {
-            setNewResumeFile(file.name)
-        }
-    }
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(true)
-    }
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        setIsDragActive(false)
-    }
-
     return (
         <div className="space-y-6">
             {/* 📑 이력서 */}
             <div className="space-y-4">
                 <Label>이력서 선택 *</Label>
-                {!showNewResume ? (
-                    <div className="space-y-3">
-                        <Select
-                            value={form.resumeId ?? ""}
-                            onValueChange={(v) => {
-                                const selected = resumes.find(r => r.id === v)
-                                patch({ resumeId: v, resumeTitle: selected ? selected.name : '' })
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="이력서를 선택하세요" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {resumes.map((r) => (
-                                    <SelectItem key={r.id} value={r.id}>
-                                        {r.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowNewResume(true)}
-                            className="w-full flex items-center gap-2"
-                        >
-                            <Plus className="h-4 w-4" /> 새 이력서 업로드
-                        </Button>
-                    </div>
+                {resumeLoading ? (
+                    <div>불러오는 중...</div>
+                ) : resumeList.length === 0 ? (
+                    <div className="text-gray-500 text-sm mb-2">등록된 이력서가 없습니다.</div>
                 ) : (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">새 이력서 업로드</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Input
-                                placeholder="예: resume.pdf"
-                                value={newResumeFile}
-                                onChange={(e) => setNewResumeFile(e.target.value)}
-                            />
-                            <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.txt"
-                                ref={fileInputRef}
-                                style={{ display: 'none' }}
-                                onChange={handleFileChange}
-                            />
-                            <div
-                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive ? 'bg-green-50 border-[#8FD694]' : ''}`}
-                                onClick={() => fileInputRef.current?.click()}
-                                onDrop={handleDrop}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                            >
-                                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">
-                                    파일 선택 또는 드래그
-                                </p>
-                                {newResumeFile && (
-                                    <p className="text-xs text-gray-500 mt-2">{newResumeFile}</p>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button className="flex-1" disabled={!newResumeFile} onClick={handleNewResumeUpload}>
-                                    업로드
-                                </Button>
-                                <Button variant="outline" className="flex-1" onClick={() => setShowNewResume(false)}>
-                                    취소
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <Select
+                        value={form.resumeId ?? ''}
+                        onValueChange={v => {
+                            const selected = resumeList.find(r => r.id === v)
+                            patch({ resumeId: v, resumeTitle: selected ? selected.name : '' })
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="이력서를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {resumeList.map(r => (
+                                <SelectItem key={r.id} value={r.id!}>{r.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 )}
+                <Button
+                    variant="outline"
+                    onClick={() => setResumeDialogOpen(true)}
+                    className="w-full flex items-center gap-2"
+                >
+                    <Plus className="h-4 w-4" /> 새 이력서 업로드
+                </Button>
+                <ResumeUploadDialog
+                    open={resumeDialogOpen}
+                    onOpenChange={setResumeDialogOpen}
+                    memberId={memberId!}
+                    onSuccess={() => {
+                        setResumeDialogOpen(false)
+                        queryClient.invalidateQueries({ queryKey: ['resumeList', memberId] })
+                    }}
+                />
+                {/* 미리보기 */}
+                <div className="mt-2">
+                    {form.resumeId ? (
+                        resumeDetailLoading ? (
+                            <div>미리보기 불러오는 중...</div>
+                        ) : resumeDetail ? (
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <h2 className="text-lg font-bold mb-2">{resumeDetail.fileName}</h2>
+                                    <div className="text-sm text-gray-500 mb-2">업로드일: {resumeDetail.createdAt ? new Date(resumeDetail.createdAt).toLocaleString() : '-'}</div>
+                                    <div className="text-sm text-gray-500 mb-2">파일 크기: {resumeDetail.fileSize ? `${(resumeDetail.fileSize / 1024).toFixed(1)}KB` : '-'}</div>
+                                    {resumeDetail.fileUrl && (
+                                        <a href={resumeDetail.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">다운로드</a>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div>미리보기 불러오기 실패</div>
+                        )
+                    ) : (
+                        <div className="text-gray-400 text-sm">선택된 이력서가 없습니다.</div>
+                    )}
+                </div>
             </div>
 
             {/* 📝 자기소개서 */}
             <div className="space-y-4">
                 <Label>자기소개서 선택 *</Label>
-                {!showNewCoverLetter ? (
-                    <div className="space-y-3">
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {coverLetters.map((cl) => (
-                                <Card
-                                    key={cl.id}
-                                    className={`cursor-pointer transition ${form.coverLetterId === cl.id ? 'border-[#8FD694] bg-[#8FD694]/5' : 'hover:bg-gray-50'}`}
-                                    onClick={() => patch({ coverLetterId: cl.id, coverLetterTitle: cl.representativeTitle })}
-                                >
-                                    <CardContent className="p-4">
-                                        <h4 className="font-medium truncate">{cl.representativeTitle}</h4>
-                                        <ul className="mt-2 space-y-1 text-xs text-gray-600">
-                                            {cl.items.map((item, idx) => (
-                                                <li key={idx}>
-                                                    <span className="font-semibold">[{item.title}]</span> {item.content.slice(0, 30)}...
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                        <Button
-                            variant="outline"
-                            className="w-full flex items-center gap-2"
-                            onClick={() => setShowNewCoverLetter(true)}
-                        >
-                            <Plus className="h-4 w-4" /> 새 자기소개서 작성
-                        </Button>
-                    </div>
+                {coverLetterLoading ? (
+                    <div>불러오는 중...</div>
+                ) : coverLetterList.length === 0 ? (
+                    <div className="text-gray-500 text-sm mb-2">등록된 자기소개서가 없습니다.</div>
                 ) : (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">새 자기소개서 작성</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Input
-                                placeholder="대표 제목"
-                                value={newCoverLetterRepTitle}
-                                onChange={(e) => setNewCoverLetterRepTitle(e.target.value)}
-                            />
-                            {newCoverLetterItems.map((item, idx) => (
-                                <div key={idx} className="flex flex-col gap-2 mb-2 w-full">
-                                    <Input
-                                        placeholder="제목"
-                                        value={item.title}
-                                        onChange={(e) => {
-                                            const next = [...newCoverLetterItems]
-                                            next[idx].title = e.target.value
-                                            setNewCoverLetterItems(next)
-                                        }}
-                                    />
-                                    <Textarea
-                                        rows={3}
-                                        placeholder="내용"
-                                        value={item.content}
-                                        onChange={(e) => {
-                                            const next = [...newCoverLetterItems]
-                                            next[idx].content = e.target.value
-                                            setNewCoverLetterItems(next)
-                                        }}
-                                    />
-                                    <Button
-                                        variant="ghost"
-                                        disabled={newCoverLetterItems.length === 1}
-                                        onClick={() => setNewCoverLetterItems(items => items.length > 1 ? items.filter((_, i) => i !== idx) : items)}
-                                        className="self-start text-xs text-red-400"
-                                    >
-                                        삭제
-                                    </Button>
-                                </div>
-                            ))}
-                            <Button
-                                variant="outline"
-                                onClick={() => setNewCoverLetterItems(items => [...items, { title: '', content: '' }])}
-                                className="w-full mb-2"
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {coverLetterList.map(cl => (
+                            <Card
+                                key={cl.id}
+                                className={`cursor-pointer transition ${form.coverLetterId === cl.id ? 'border-[#8FD694] bg-[#8FD694]/5' : 'hover:bg-gray-50'}`}
+                                onClick={() => patch({ coverLetterId: cl.id, coverLetterTitle: cl.representativeTitle })}
                             >
-                                + 항목 추가
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button
-                                    className="flex-1"
-                                    disabled={!newCoverLetterRepTitle || newCoverLetterItems.some(i => !i.title || !i.content)}
-                                    onClick={handleNewCoverLetterSave}
-                                >
-                                    저장
-                                </Button>
-                                <Button variant="outline" className="flex-1" onClick={() => setShowNewCoverLetter(false)}>
-                                    취소
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <CardContent className="p-4">
+                                    <h4 className="font-medium truncate">{cl.representativeTitle}</h4>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 )}
+                <Button
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                    onClick={() => setCoverLetterDialogOpen(true)}
+                >
+                    <Plus className="h-4 w-4" /> 새 자기소개서 작성
+                </Button>
+                <CoverLetterDialog
+                    open={coverLetterDialogOpen}
+                    onOpenChange={setCoverLetterDialogOpen}
+                    memberId={memberId!}
+                    onSuccess={() => {
+                        setCoverLetterDialogOpen(false)
+                        queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
+                    }}
+                />
+                {/* 미리보기 */}
+                <div className="mt-2">
+                    {form.coverLetterId ? (
+                        coverLetterDetailLoading ? (
+                            <div>미리보기 불러오는 중...</div>
+                        ) : coverLetterDetail ? (
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <h2 className="text-lg font-bold mb-2">{coverLetterDetail.corporateName} - {coverLetterDetail.jobName}</h2>
+                                    <div className="text-sm text-gray-500 mb-2">생성일: {coverLetterDetail.createdAt ? new Date(coverLetterDetail.createdAt).toLocaleString() : '-'}</div>
+                                    {coverLetterDetail.qnaList && coverLetterDetail.qnaList.length > 0 ? (
+                                        coverLetterDetail.qnaList.map((qna, idx) => (
+                                            <div key={idx} className="mb-6">
+                                                <h3 className="font-medium text-base mb-2">{qna.question}</h3>
+                                                <p className="text-gray-700 whitespace-pre-line text-sm">{qna.answer}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div>질문/답변이 없습니다.</div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div>미리보기 불러오기 실패</div>
+                        )
+                    ) : (
+                        <div className="text-gray-400 text-sm">선택된 자기소개서가 없습니다.</div>
+                    )}
+                </div>
             </div>
         </div>
+    )
+}
+
+function ResumeUploadDialog({ open, onOpenChange, memberId, onSuccess }: { open: boolean, onOpenChange: (v: boolean) => void, memberId: number, onSuccess: () => void }) {
+    const [file, setFile] = useState<File | null>(null)
+    const [progress, setProgress] = useState(0)
+    const [isUploading, setIsUploading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0])
+            setError(null)
+        }
+    }
+
+    const handleUpload = async () => {
+        if (!file) return
+        setIsUploading(true)
+        setProgress(0)
+        setError(null)
+        try {
+            const presigned = await getPresignedUploadUrl(file.name)
+            const { presignedUrl, fileUrl } = presigned.result!
+            await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest()
+                xhr.open('PUT', presignedUrl!, true)
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        setProgress(Math.round((event.loaded / event.total) * 100))
+                    }
+                }
+                xhr.onload = () => {
+                    if (xhr.status === 200) resolve()
+                    else reject(new Error('S3 업로드 실패'))
+                }
+                xhr.onerror = () => reject(new Error('S3 업로드 실패'))
+                xhr.setRequestHeader('Content-Type', file.type)
+                xhr.send(file)
+            })
+            await saveResume({
+                memberId,
+                fileName: file.name,
+                fileUrl: fileUrl!,
+                fileSize: file.size,
+            })
+            setProgress(100)
+            onSuccess()
+            alert('이력서가 성공적으로 업로드되었습니다.')
+        } catch (e: any) {
+            setError(e.message || '업로드 실패')
+            alert('업로드에 실패했습니다. 다시 시도해주세요.')
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>이력서 업로드</DialogTitle>
+                    <DialogDescription>PDF 파일을 업로드하세요.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <Input type="file" accept="application/pdf" onChange={handleFileChange} disabled={isUploading} />
+                    {progress > 0 && (
+                        <Progress value={progress} />
+                    )}
+                    {error && <div className="text-red-500 text-sm">{error}</div>}
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>취소</Button>
+                        <Button onClick={handleUpload} disabled={!file || isUploading} className="bg-[#8FD694] text-white">
+                            {isUploading ? '업로드 중...' : '업로드'}
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function CoverLetterDialog({ open, onOpenChange, memberId, onSuccess }: { open: boolean, onOpenChange: (v: boolean) => void, memberId: number, onSuccess: () => void }) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>자기소개서 추가</DialogTitle>
+                    <DialogDescription>질문과 답변을 직접 입력하세요.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <CoverLetterForm
+                        onSubmit={(data) => {
+                            createCoverletter(data).then(() => {
+                                onSuccess()
+                                alert('자기소개서가 성공적으로 등록되었습니다.')
+                            }).catch(() => {
+                                alert('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
+                            })
+                        }}
+                        onCancel={() => onOpenChange(false)}
+                    />
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }

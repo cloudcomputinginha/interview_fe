@@ -2,8 +2,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { KakaoLoginButton } from "@/components/kakao-login-button"
+import { useMemberSession } from '../../components/member-session-context'
 
 export default function LoginPage() {
+  const { login } = useMemberSession()
+
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
@@ -38,7 +41,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full" onClick={() => (window.location.href = "/workspace")}>
+              <Button variant="outline" className="w-full" onClick={() => { login(1); window.location.href = "/workspace" }}>
                 임시 로그인
               </Button>
             </div>

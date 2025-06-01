@@ -8,28 +8,39 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, X } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { useRequireMemberId } from "@/components/member-session-context"
 
 interface CoverLetterFormProps {
   onSubmit: (data: {
-    title: string
-    content: { id: number; question: string; answer: string }[]
+    memberId: number
+    corporateName: string
+    jobName: string
+    qnaDTOList: { question: string; answer: string }[]
   }) => void
   onCancel: () => void
   initialData?: {
-    title: string
-    content: { id: number; question: string; answer: string }[]
+    corporateName: string
+    jobName: string
+    qnaDTOList: { question: string; answer: string }[]
   }
 }
 
 export function CoverLetterForm({ onSubmit, onCancel, initialData }: CoverLetterFormProps) {
-  const [coverLetterTitle, setCoverLetterTitle] = useState(initialData?.title || "")
+  const memberId = useRequireMemberId()
+  const [corporateName, setCorporateName] = useState(initialData?.corporateName || "")
+  const [jobName, setJobName] = useState(initialData?.jobName || "")
   const [questionAnswerPairs, setQuestionAnswerPairs] = useState(
-    initialData?.content || [{ id: 1, question: "", answer: "" }],
+    initialData?.qnaDTOList
+      ? initialData.qnaDTOList.map((item, idx) => ({ id: Date.now() + idx, ...item }))
+      : [{ id: 1, question: "", answer: "" }],
   )
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit")
 
   const addQuestionAnswerPair = () => {
-    setQuestionAnswerPairs([...questionAnswerPairs, { id: Date.now(), question: "", answer: "" }])
+    setQuestionAnswerPairs([
+      ...questionAnswerPairs,
+      { id: Date.now(), question: "", answer: "" },
+    ])
   }
 
   const removeQuestionAnswerPair = (id: number) => {
@@ -39,31 +50,52 @@ export function CoverLetterForm({ onSubmit, onCancel, initialData }: CoverLetter
   }
 
   const updateQuestionAnswerPair = (id: number, field: "question" | "answer", value: string) => {
-    setQuestionAnswerPairs(questionAnswerPairs.map((pair) => (pair.id === id ? { ...pair, [field]: value } : pair)))
+    setQuestionAnswerPairs(
+      questionAnswerPairs.map((pair) =>
+        pair.id === id ? { ...pair, [field]: value } : pair
+      )
+    )
   }
 
   const handleSubmit = () => {
     onSubmit({
-      title: coverLetterTitle,
-      content: questionAnswerPairs,
+      memberId: memberId!,
+      corporateName,
+      jobName,
+      qnaDTOList: questionAnswerPairs.map(({ question, answer }) => ({ question, answer })),
     })
   }
 
   const isFormValid = () => {
-    return coverLetterTitle && questionAnswerPairs.every((pair) => pair.question && pair.answer)
+    return (
+      corporateName &&
+      jobName &&
+      questionAnswerPairs.every((pair) => pair.question && pair.answer)
+    )
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <Label htmlFor="coverLetterTitle" className="mb-2 block">
-          자기소개서 제목
+        <Label htmlFor="corporateName" className="mb-2 block">
+          기업명
         </Label>
         <Input
-          id="coverLetterTitle"
-          value={coverLetterTitle}
-          onChange={(e) => setCoverLetterTitle(e.target.value)}
-          placeholder="예: 삼성전자 신입 공채 자기소개서"
+          id="corporateName"
+          value={corporateName}
+          onChange={(e) => setCorporateName(e.target.value)}
+          placeholder="예: 삼성전자"
+        />
+      </div>
+      <div>
+        <Label htmlFor="jobName" className="mb-2 block">
+          직무명
+        </Label>
+        <Input
+          id="jobName"
+          value={jobName}
+          onChange={(e) => setJobName(e.target.value)}
+          placeholder="예: SW개발자"
         />
       </div>
 
@@ -126,7 +158,7 @@ export function CoverLetterForm({ onSubmit, onCancel, initialData }: CoverLetter
         <TabsContent value="preview" className="space-y-6">
           <Card>
             <CardContent className="pt-6">
-              <h2 className="text-xl font-bold mb-6">{coverLetterTitle}</h2>
+              <h2 className="text-xl font-bold mb-6">{corporateName} - {jobName}</h2>
               {questionAnswerPairs.map((pair, index) => (
                 <div key={pair.id} className="mb-8">
                   <h3 className="font-medium text-lg mb-2">{pair.question}</h3>
