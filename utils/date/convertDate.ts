@@ -11,12 +11,12 @@ export const convertDate = (date: string) => {
   const diffMinutes = Math.floor(diffTime / (1000 * 60));
   const diffSeconds = Math.floor(diffTime / 1000);
 
-  if (diffHours < 24) {
-    return `${diffHours}시간 전`;
+  if (diffSeconds < 60) {
+    return `${diffSeconds}초 전`;
   } else if (diffMinutes < 60) {
     return `${diffMinutes}분 전`;
-  } else if (diffSeconds < 60) {
-    return `${diffSeconds}초 전`;
+  } else if (diffHours < 24) {
+    return `${diffHours}시간 전`;
   }
 
   return `${year}년 ${month}월 ${day}일`;
