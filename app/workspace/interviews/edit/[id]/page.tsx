@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { updateInterview, updateInterviewOption } from '@/api/interview'
 
 export default function EditInterviewPage({ params }: { params: { id: string } }) {
   const interviewId = params.id
@@ -108,7 +109,7 @@ export default function EditInterviewPage({ params }: { params: { id: string } }
     setParticipants(participants.map((p) => (p.id === id ? { ...p, email } : p)))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // 데이터 검증
     if (!title) {
       alert("면접 제목을 입력해주세요.")
@@ -125,26 +126,28 @@ export default function EditInterviewPage({ params }: { params: { id: string } }
       return
     }
 
-    // 면접 정보 업데이트 (실제 구현에서는 API 호출)
-    const updatedInterview = {
-      ...interview,
-      title,
-      date,
-      time,
-      isPublic,
-      maxParticipants,
-      participants,
-      resume: selectedResume,
-      coverLetter: selectedCoverLetter,
+    try {
+      // 1. 면접 정보 수정
+      await updateInterview(Number(interviewId), {
+        title,
+        startAt: `${date}T${time}`,
+        isPublic,
+        maxParticipants,
+        participants,
+        resume: selectedResume,
+        coverLetter: selectedCoverLetter,
+      })
+      // 2. 면접 옵션 수정
+      await updateInterviewOption(Number(interviewId), interview.hostId || 1, {
+        voiceType: interview.voiceType || 'FEMALE20',
+        questionNumber: interview.questionNumber || 10,
+        answerTime: interview.answerDuration || 3,
+      })
+      alert("면접 정보가 성공적으로 업데이트되었습니다.")
+      window.location.href = "/workspace/interviews"
+    } catch (err: any) {
+      alert(err?.message || "면접 정보 업데이트에 실패했습니다.")
     }
-
-    console.log("Updated interview:", updatedInterview)
-
-    // 성공 메시지 표시
-    alert("면접 정보가 성공적으로 업데이트되었습니다.")
-
-    // 면접 목록 페이지로 이동
-    window.location.href = "/workspace/interviews"
   }
 
   // Format date for display
