@@ -71,12 +71,19 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
     },
   })
 
-  // 로딩/에러 처리
-  if (interviewLoading || resumeLoading || coverletterLoading)
-    return <div className="p-10 text-center">로딩 중...</div>
-  if (interviewError || resumeError || coverletterError)
-    return <div className="p-10 text-center text-red-500">데이터를 불러오지 못했습니다.</div>
-  if (!post) return <div className="p-10 text-center text-red-500">면접 정보를 찾을 수 없습니다.</div>
+  // 에러/호스트 본인 체크 후 뒤로 이동 처리
+  if (!interviewLoading && !resumeLoading && !coverletterLoading) {
+    if (interviewError || resumeError || coverletterError || !post) {
+      alert('데이터를 불러오지 못했습니다.')
+      if (typeof window !== 'undefined') window.history.back()
+      return null
+    }
+    if (memberId && post.hostName && String(memberId) === post.hostName) {
+      alert('본인은 자신의 면접에 참여할 수 없습니다.')
+      if (typeof window !== 'undefined') window.history.back()
+      return null
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,7 +97,7 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
             <ArrowLeft className="h-4 w-4 mr-1" /> 모집글로 돌아가기
           </Link>
           <h1 className="text-2xl font-bold">면접 참여 신청</h1>
-          <p className="text-gray-600 mt-2">{post.name}</p>
+          <p className="text-gray-600 mt-2">{post?.name ?? ''}</p>
         </div>
 
         {/* Main Content */}
@@ -105,7 +112,7 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
                 <div>
                   <h3 className="font-medium text-blue-700">면접 참여 안내</h3>
                   <p className="text-blue-600 text-sm mt-1">
-                    면접에 사용할 이력서와 자기소개서를 선택해주세요. 면접은 {post.startedAt && new Date(post.startedAt).toLocaleString('ko-KR')}에 자동으로 시작됩니다.
+                    면접에 사용할 이력서와 자기소개서를 선택해주세요. 면접은 {post?.startedAt && new Date(post?.startedAt).toLocaleString('ko-KR')}에 자동으로 시작됩니다.
                   </p>
                 </div>
               </div>
@@ -117,20 +124,20 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">면접 제목</span>
-                    <span className="text-sm font-medium">{post.name}</span>
+                    <span className="text-sm font-medium">{post?.name ?? ''}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">면접 일시</span>
-                    <span className="text-sm font-medium">{post.startedAt && new Date(post.startedAt).toLocaleString('ko-KR')}</span>
+                    <span className="text-sm font-medium">{post?.startedAt && new Date(post?.startedAt).toLocaleString('ko-KR')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">호스트</span>
-                    <span className="text-sm font-medium">{post.hostName}</span>
+                    <span className="text-sm font-medium">{post?.hostName ?? ''}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">참가자</span>
                     <span className="text-sm font-medium">
-                      {post.currentParticipants}/{post.maxParticipants}명
+                      {post?.currentParticipants ?? 0}/{post?.maxParticipants ?? 0}명
                     </span>
                   </div>
                 </div>
