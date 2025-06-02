@@ -41,7 +41,17 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full" onClick={() => { login(1); window.location.href = "/workspace" }}>
+              <Button variant="outline" className="w-full" onClick={() => {
+                const input = window.prompt('로그인할 멤버 ID를 입력하세요')
+                if (!input) return
+                const id = Number(input)
+                if (isNaN(id) || id <= 0) {
+                  alert('올바른 숫자 ID를 입력하세요')
+                  return
+                }
+                login(id)
+                window.location.href = "/workspace"
+              }}>
                 임시 로그인
               </Button>
             </div>
