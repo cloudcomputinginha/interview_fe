@@ -8,44 +8,82 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { HeaderWithNotifications } from '@/components/header-with-notifications'
+import { getGroupInterviewDetail } from '@/api/interview'
+import type { GroupInterviewDetailDTO } from '@/api/types/interview-types'
+import { useQuery } from '@tanstack/react-query'
+import { useMemberSession } from '@/components/member-session-context'
+import { use as usePromise } from "react"
 
-export default function InterviewPostDetailPage({ params }: { params: { id: string } }) {
-  const postId = params.id
+export default function InterviewPostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: postId } = usePromise(params)
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['groupInterviewDetail', postId],
+    queryFn: () => getGroupInterviewDetail(Number(postId)),
+  })
+  const post: GroupInterviewDetailDTO | null = data?.result ?? null
+
+  // 로그인 유저 정보
+  const { memberId } = useMemberSession()
+  // 호스트 판별: hostName(닉네임/이름) 비교만 사용
+  const isHost = !!(
+    memberId && post && post.hostName && String(memberId) === post.hostName
+  )
+
   const [timeLeft, setTimeLeft] = useState("")
-  const [isHost, setIsHost] = useState(true) // For demo purposes, set to true
 
-  // Mock data for the interview post
-  const post = {
-    id: Number.parseInt(postId),
-    title: "삼성전자 상반기 공채 대비 모의면접",
-    field: "개발",
-    date: "2023-06-10T14:00:00",
-    currentParticipants: 2,
-    maxParticipants: 4,
-    type: "technical",
-    description:
-      "삼성전자 개발직군 공채를 준비하는 분들과 함께 모의면접을 진행하려고 합니다. 알고리즘, 자료구조, CS 기초 지식 등을 중점적으로 다룰 예정입니다. 각자 준비한 자기소개서를 바탕으로 질문을 주고받을 예정이니 참여하실 분들은 자기소개서를 미리 준비해주세요.",
-    host: {
-      id: 1,
-      name: "김지원",
-    },
-    participants: [
-      {
-        id: 1,
-        name: "김지원",
-        isHost: true,
-        hasSubmittedDocs: true,
-      },
-      {
-        id: 2,
-        name: "이민수",
-        isHost: false,
-        hasSubmittedDocs: false,
-      },
-    ],
+  // 본인 신청 여부 확인
+  const isAlreadyApplied = post?.groupInterviewParticipants?.some(
+    (p) => p.memberId === memberId
+  )
+
+  // 면접까지 남은 시간 계산
+  useEffect(() => {
+    if (!post?.startedAt) return
+    const calculateTimeLeft = () => {
+      const interviewDate = new Date(post.startedAt!)
+      const now = new Date()
+      const difference = interviewDate.getTime() - now.getTime()
+      if (difference <= 0) {
+        setTimeLeft("면접 시간이 지났습니다")
+        return
+      }
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+      if (days > 0) {
+        setTimeLeft(`${days}일 ${hours}시간 남음`)
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}시간 ${minutes}분 남음`)
+      } else {
+        setTimeLeft(`${minutes}분 남음`)
+      }
+    }
+    calculateTimeLeft()
+    const timer = setInterval(calculateTimeLeft, 60000)
+    return () => clearInterval(timer)
+  }, [post?.startedAt])
+
+  function formatDate(dateString?: string) {
+    if (!dateString) return ""
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+    return new Date(dateString).toLocaleDateString("ko-KR", options)
   }
 
-  // Mock data for recommended posts
+  const handleJoin = () => {
+    window.location.href = `/workspace/interview/group/community/${postId}/join`
+  }
+  const handleCreateInterview = () => {
+    window.location.href = `/workspace/interview/group/community/create`
+  }
+
+  // 추천 모집글 mock 유지
   const recommendedPosts = [
     {
       id: 3,
@@ -65,57 +103,14 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
     },
   ]
 
-  // Calculate time left until the interview
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const interviewDate = new Date(post.date)
-      const now = new Date()
-      const difference = interviewDate.getTime() - now.getTime()
-
-      if (difference <= 0) {
-        setTimeLeft("면접 시간이 지났습니다")
-        return
-      }
-
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-
-      if (days > 0) {
-        setTimeLeft(`${days}일 ${hours}시간 남음`)
-      } else if (hours > 0) {
-        setTimeLeft(`${hours}시간 ${minutes}분 남음`)
-      } else {
-        setTimeLeft(`${minutes}분 남음`)
-      }
+  if (isLoading) return <div className='p-10 text-center'>로딩 중...</div>
+  if (error || !post) {
+    let msg = '데이터 없음'
+    if (error) {
+      if (typeof error === 'string') msg = error
+      else if (error instanceof Error) msg = error.message
     }
-
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 60000) // Update every minute
-
-    return () => clearInterval(timer)
-  }, [post.date])
-
-  // Format date for display
-  function formatDate(dateString: string) {
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }
-    return new Date(dateString).toLocaleDateString("ko-KR", options)
-  }
-
-  const handleJoin = () => {
-    // 면접 참여 신청 페이지로 이동
-    window.location.href = `/workspace/interview/group/community/${postId}/join`
-  }
-
-  const handleCreateInterview = () => {
-    // 호스트만 면접 생성 및 수정 가능
-    window.location.href = `/workspace/interview/group/community/create`
+    return <div className='p-10 text-center text-red-500'>{msg}</div>
   }
 
   return (
@@ -131,21 +126,25 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> 다대다 면접 모집으로 돌아가기
             </Link>
-            <h1 className="text-2xl font-bold">{post.title}</h1>
+            <h1 className="text-2xl font-bold">{post.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge
                 className={
-                  post.type === "technical"
+                  post.interviewType === "TECHNICAL"
                     ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
                     : "bg-purple-100 text-purple-800 hover:bg-purple-100"
                 }
               >
-                {post.type === "technical" ? "기술 면접" : "인성 면접"}
+                {post.interviewType === "TECHNICAL" ? "기술 면접" : "인성 면접"}
               </Badge>
-              <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{post.field}</Badge>
-              <span className="text-gray-500 text-sm">
-                • 작성자: <span className="font-medium">{post.host.name}</span>
-              </span>
+              {post.jobName && (
+                <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{post.jobName}</Badge>
+              )}
+              {post.hostName && (
+                <span className="text-gray-500 text-sm">
+                  • 작성자: <span className="font-medium">{post.hostName}</span>
+                </span>
+              )}
             </div>
           </div>
 
@@ -162,7 +161,7 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
                     <Calendar className="h-5 w-5 text-[#8FD694] mr-3 mt-0.5" />
                     <div>
                       <h3 className="font-medium">면접 일시</h3>
-                      <p className="text-gray-600">{formatDate(post.date)}</p>
+                      <p className="text-gray-600">{formatDate(post.startedAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -194,9 +193,11 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
                   </Button>
                   {isHost ? (
                     <Button className="bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={handleCreateInterview}>
-                      {post.currentParticipants > 0 ? "면접 설정 수정" : "면접 만들기"}
+                      {post.currentParticipants && post.currentParticipants > 0 ? "면접 설정 수정" : "면접 만들기"}
                     </Button>
-                  ) : post.currentParticipants < post.maxParticipants ? (
+                  ) : isAlreadyApplied ? (
+                    <Button className="bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={() => alert('자료 수정 기능은 추후 지원됩니다.')}>자료 수정</Button>
+                  ) : post.currentParticipants && post.maxParticipants && post.currentParticipants < post.maxParticipants ? (
                     <Button className="bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={handleJoin}>
                       면접 참여 신청
                     </Button>
@@ -213,26 +214,31 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {post.participants.map((participant) => (
-                      <div key={participant.id} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Avatar className="h-8 w-8 mr-3">
-                            <AvatarFallback className="bg-[#8FD694] text-white">
-                              {participant.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{participant.name}</span>
+                    {post.groupInterviewParticipants && post.groupInterviewParticipants.length > 0 ? (
+                      post.groupInterviewParticipants.map((participant, idx) => (
+                        <div key={participant.memberId || idx} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Avatar className="h-8 w-8 mr-3">
+                              <AvatarFallback className="bg-[#8FD694] text-white">
+                                {participant.name?.charAt(0) || '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{participant.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {/* 제출 여부는 submitted로 표시 */}
+                            {participant.submitted ? (
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">자료 제출 완료</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">자료 미제출</Badge>
+                            )}
+                            {participant.host && <Badge className="bg-[#8FD694] hover:bg-[#8FD694]">호스트</Badge>}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {participant.hasSubmittedDocs ? (
-                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">자료 제출 완료</Badge>
-                          ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">자료 미제출</Badge>
-                          )}
-                          {participant.isHost && <Badge className="bg-[#8FD694] hover:bg-[#8FD694]">호스트</Badge>}
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="text-gray-400 text-sm">아직 참여자가 없습니다.</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -254,15 +260,17 @@ export default function InterviewPostDetailPage({ params }: { params: { id: stri
                     <span>{timeLeft}</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    면접은 <span className="font-medium">{formatDate(post.date)}</span>에 자동으로 시작됩니다.
+                    면접은 <span className="font-medium">{formatDate(post.startedAt)}</span>에 자동으로 시작됩니다.
                   </p>
                 </CardContent>
                 <CardFooter>
                   {isHost ? (
                     <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={handleCreateInterview}>
-                      {post.currentParticipants > 0 ? "면접 설정 수정" : "면접 만들기"}
+                      {post.currentParticipants && post.currentParticipants > 0 ? "면접 설정 수정" : "면접 만들기"}
                     </Button>
-                  ) : post.currentParticipants < post.maxParticipants ? (
+                  ) : isAlreadyApplied ? (
+                    <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={() => alert('자료 수정 기능은 추후 지원됩니다.')}>자료 수정</Button>
+                  ) : post.currentParticipants && post.maxParticipants && post.currentParticipants < post.maxParticipants ? (
                     <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={handleJoin}>
                       면접 참여 신청
                     </Button>

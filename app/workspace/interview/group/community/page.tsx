@@ -10,92 +10,48 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HeaderWithNotifications } from "@/components/header-with-notifications"
 import { CommunityLayout } from "@/components/community-layout"
+import { getGroupInterviewCards } from "@/api/interview"
+import { useQuery } from "@tanstack/react-query"
 
 export default function InterviewCommunityPage() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["interviewPosts"],
+    queryFn: () => getGroupInterviewCards(),
+  })
+
+  // API 데이터
+  const posts = data?.result || []
+
   const [dateFilter, setDateFilter] = useState("all")
   const [fieldFilter, setFieldFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Mock data for interview posts
-  const interviewPosts = [
-    {
-      id: 1,
-      title: "삼성전자 상반기 공채 대비 모의면접",
-      field: "개발",
-      date: "2023-06-10T14:00:00",
-      currentParticipants: 2,
-      maxParticipants: 4,
-      type: "technical",
-    },
-    {
-      id: 2,
-      title: "마케팅 직무 인성 면접 스터디",
-      field: "마케팅",
-      date: "2023-06-12T15:30:00",
-      currentParticipants: 1,
-      maxParticipants: 3,
-      type: "personality",
-    },
-    {
-      id: 3,
-      title: "금융권 취업 준비 모임",
-      field: "금융",
-      date: "2023-06-15T10:00:00",
-      currentParticipants: 3,
-      maxParticipants: 5,
-      type: "technical",
-    },
-    {
-      id: 4,
-      title: "디자인 포트폴리오 리뷰 및 모의면접",
-      field: "디자인",
-      date: "2023-06-11T13:00:00",
-      currentParticipants: 2,
-      maxParticipants: 4,
-      type: "personality",
-    },
-    {
-      id: 5,
-      title: "IT 대기업 기술면접 대비",
-      field: "개발",
-      date: "2023-06-14T16:00:00",
-      currentParticipants: 2,
-      maxParticipants: 5,
-      type: "technical",
-    },
-    {
-      id: 6,
-      title: "공기업 인적성 및 면접 준비",
-      field: "공공기관",
-      date: "2023-06-16T11:00:00",
-      currentParticipants: 1,
-      maxParticipants: 5,
-      type: "personality",
-    },
-  ]
-
-  // Filter posts based on selected filters and search query
-  const filteredPosts = interviewPosts.filter((post) => {
-    const matchesDate = dateFilter === "all" || isDateMatch(post.date, dateFilter)
-    const matchesField = fieldFilter === "all" || post.field === fieldFilter
-    const matchesType = typeFilter === "all" || post.type === typeFilter
+  const filteredPosts = posts.filter((post) => {
+    // 날짜 필터
+    const matchesDate =
+      dateFilter === "all" || (post.startedAt ? isDateMatch(post.startedAt, dateFilter) : false)
+    // 유형 필터
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "technical" && post.interviewType === "TECHNICAL") ||
+      (typeFilter === "personality" && post.interviewType === "PERSONALITY")
+    // 검색 (제목/직무)
     const matchesSearch =
       searchQuery === "" ||
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.field.toLowerCase().includes(searchQuery.toLowerCase())
+      (post.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.jobName?.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    return matchesDate && matchesField && matchesType && matchesSearch
+    return matchesDate && matchesType && matchesSearch
   })
 
-  // Helper function to check if a date matches the selected filter
   function isDateMatch(dateString: string, filter: string) {
     const postDate = new Date(dateString)
     const today = new Date()
     const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setDate(today.getDate() + 1)
     const nextWeek = new Date(today)
-    nextWeek.setDate(nextWeek.getDate() + 7)
+    nextWeek.setDate(today.getDate() + 7)
 
     if (filter === "today") {
       return (
@@ -116,7 +72,8 @@ export default function InterviewCommunityPage() {
   }
 
   // Format date for display
-  function formatDate(dateString: string) {
+  function formatDate(dateString?: string) {
+    if (!dateString) return ""
     const options: Intl.DateTimeFormatOptions = {
       month: "long",
       day: "numeric",
@@ -207,27 +164,33 @@ export default function InterviewCommunityPage() {
 
           {/* Interview Posts */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPosts.length > 0 ? (
+            {isLoading ? (
+              <div className="col-span-full py-12 text-center text-gray-500">로딩 중...</div>
+            ) : error ? (
+              <div className="col-span-full py-12 text-center text-red-500">모집글을 불러오지 못했습니다.</div>
+            ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
-                <Link href={`/workspace/interview/group/community/${post.id}`} key={post.id}>
+                <Link href={`/workspace/interview/group/community/${post.interviewId}`} key={post.interviewId} className="block h-full">
                   <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-5">
                       <div className="flex justify-between items-start mb-3">
                         <Badge
                           className={
-                            post.type === "technical"
+                            post.interviewType === "TECHNICAL"
                               ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
                               : "bg-purple-100 text-purple-800 hover:bg-purple-100"
                           }
                         >
-                          {post.type === "technical" ? "기술 면접" : "인성 면접"}
+                          {post.interviewType === "TECHNICAL" ? "기술 면접" : "인성 면접"}
                         </Badge>
-                        <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{post.field}</Badge>
+                        {post.jobName && (
+                          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{post.jobName}</Badge>
+                        )}
                       </div>
-                      <h3 className="font-medium text-lg mb-3 line-clamp-2">{post.title}</h3>
+                      <h3 className="font-medium text-lg mb-3 line-clamp-2">{post.name}</h3>
                       <div className="flex items-center text-sm text-gray-500 mb-2">
                         <Clock className="h-4 w-4 mr-1" />
-                        <span>{formatDate(post.date)}</span>
+                        <span>{formatDate(post.startedAt)}</span>
                       </div>
                     </CardContent>
                     <CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-between items-center">
@@ -241,12 +204,11 @@ export default function InterviewCommunityPage() {
                         variant="ghost"
                         size="sm"
                         className="text-[#8FD694] hover:text-white hover:bg-[#8FD694]"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          window.location.href = `/workspace/interview/group/community/${post.id}`
-                        }}
+                        asChild
                       >
-                        상세보기
+                        <Link href={`/workspace/interview/group/community/${post.interviewId}`}>
+                          상세보기
+                        </Link>
                       </Button>
                     </CardFooter>
                   </Card>
