@@ -42,8 +42,8 @@ export async function updateInterviewOption(
 ) {
   return serverFetch.patch<
     ApiResponseInterviewOptionUpdateResponseDTO,
-    InterviewOptionUpdateDTO
-  >(`/interviews/${interviewId}/option`, data, { memberId });
+    InterviewOptionUpdateDTO & { memberId: number }
+  >(`/interviews/${interviewId}/option`, { ...data, memberId });
 }
 
 // 1대다 면접 모집글 리스트 조회
@@ -92,4 +92,20 @@ export async function terminateInterview(
 // 내 인터뷰 리스트 조회
 export async function getMyInterviewList() {
   return serverFetch.get<any>("/interviews");
+}
+
+// 면접 정보 수정
+export async function updateInterview(
+  interviewId: number,
+  data: {
+    title: string;
+    startAt: string;
+    isPublic: boolean;
+    maxParticipants: string;
+    participants: { id: number; email: string }[];
+    resume: string;
+    coverLetter: string;
+  }
+) {
+  return serverFetch.put(`/interviews/${interviewId}`, data);
 }
