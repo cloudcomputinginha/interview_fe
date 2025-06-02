@@ -152,7 +152,7 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
                     </SelectTrigger>
                     <SelectContent>
                       {resumes.length === 0 ? (
-                        <SelectItem value="" disabled>이력서가 없습니다</SelectItem>
+                        <div className="px-3 py-2 text-gray-400 text-sm">이력서가 없습니다</div>
                       ) : (
                         resumes.map((resume) => (
                           <SelectItem key={resume.resumeId} value={String(resume.resumeId)}>
@@ -172,7 +172,7 @@ export default function JoinGroupInterviewPage({ params }: { params: Promise<{ i
                     </SelectTrigger>
                     <SelectContent>
                       {coverLetters.length === 0 ? (
-                        <SelectItem value="" disabled>자기소개서가 없습니다</SelectItem>
+                        <div className="px-3 py-2 text-gray-400 text-sm">자기소개서가 없습니다</div>
                       ) : (
                         coverLetters.map((letter) => (
                           <SelectItem key={letter.coverletterId} value={String(letter.coverletterId)}>

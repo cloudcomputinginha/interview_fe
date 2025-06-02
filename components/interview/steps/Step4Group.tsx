@@ -89,7 +89,12 @@ export default function Step4Group({ form, setForm }: Props) {
                                 if (!d) return
                                 const today = new Date()
                                 today.setHours(0, 0, 0, 0)
-                                if (d >= today) patch({ scheduledDate: d })
+                                if (d >= today) {
+                                    patch({
+                                        startType: "scheduled",
+                                        scheduledDate: d,
+                                    })
+                                }
                             }}
                             disabled={(d) => {
                                 const today = new Date()
