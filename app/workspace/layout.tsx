@@ -22,5 +22,6 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
     }, [memberId, pathname])
 
     if (!memberId && !EXCLUDE_PATHS.includes(pathname)) return null
+    
     return <>{children}</>
 } 
