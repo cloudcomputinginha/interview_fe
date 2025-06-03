@@ -69,8 +69,11 @@ interface UseInterviewSessionResult {
   error: string | null;
   audioUrlMap: Record<string, string>;
   progressMessage: string;
-  handleMainAnswerSubmit: (answer: string) => Promise<void>;
-  handleFollowUpAnswerSubmit: (answer: string) => Promise<void>;
+  handleMainAnswerSubmit: (answer: string, isText?: boolean) => Promise<void>;
+  handleFollowUpAnswerSubmit: (
+    answer: string,
+    isText?: boolean
+  ) => Promise<void>;
   isFeedbackLoading: boolean;
   isFinalReportLoading: boolean;
   finalReport: any;
@@ -144,13 +147,15 @@ export function useInterviewSession(
   }, []);
 
   const handleMainAnswerSubmit = useCallback(
-    async (answer: string) => {
+    async (answer: string, isText = false) => {
       if (!session || !session.sessionId) return;
       setIsQuestionLoading(true);
       try {
-        await answerMainQuestion(session.sessionId, currentQuestionIdx, {
-          answer,
-        });
+        if (isText) {
+          await answerMainQuestion(session.sessionId, currentQuestionIdx, {
+            answer,
+          });
+        }
 
         const sessionWithFollowUp = await generateFollowUpQuestions(
           session.sessionId,
@@ -181,9 +186,19 @@ export function useInterviewSession(
   );
 
   const handleFollowUpAnswerSubmit = useCallback(
-    async (answer: string) => {
+    async (answer: string, isText = false) => {
       if (!session || !session.sessionId || currentFollowUpIdx === -1) return;
       try {
+        if (isText) {
+          await answerFollowUpQuestion(
+            session.sessionId,
+            currentQuestionIdx,
+            currentFollowUpIdx,
+            {
+              answer,
+            }
+          );
+        }
         if (
           qaFlow[currentQuestionIdx].followUps &&
           qaFlow[currentQuestionIdx].followUps.length - 1 === currentFollowUpIdx

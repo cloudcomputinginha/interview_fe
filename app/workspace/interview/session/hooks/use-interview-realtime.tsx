@@ -21,8 +21,9 @@ const RealtimeContext = createContext<RealtimeContextValue | undefined>(
 interface RealtimeProviderProps {
   children: React.ReactNode;
   wsRef: React.MutableRefObject<AIInterviewSocket | null>;
+  connectWsAsync: () => Promise<unknown>;
 }
-export function RealtimeProvider({ children, wsRef }: RealtimeProviderProps) {
+export function RealtimeProvider({ children, wsRef, connectWsAsync }: RealtimeProviderProps) {
   const [isAnswering, setIsAnswering] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
@@ -48,7 +49,8 @@ export function RealtimeProvider({ children, wsRef }: RealtimeProviderProps) {
       const ws = wsRef.current;
       if (!ws || !ws.isConnected()) {
         setMediaError("WebSocket이 연결되지 않았습니다.");
-        throw new Error("WebSocket이 연결되지 않았습니다.");
+        await connectWsAsync();
+        return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

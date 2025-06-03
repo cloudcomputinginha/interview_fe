@@ -132,7 +132,7 @@ export default function InterviewSessionPage() {
     )
   }
   return (
-    <RealtimeProvider wsRef={wsRef}>
+    <RealtimeProvider wsRef={wsRef} connectWsAsync={connectWsAsync}>
       <InterviewSessionContent
         sessionCtx={sessionCtx}
         voiceAnswerText={voiceAnswerText}
@@ -194,9 +194,29 @@ function InterviewSessionContent(
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [answerText, setAnswerText] = useState('')
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  // 자동 제출 useEffect (timer가 0이 되면 자동 제출)
+  useEffect(() => {
+    if (isAnswering && timer === 0 && !isSubmitting) {
+      handleSubmit()
+    }
+  }, [isAnswering, timer, isSubmitting])
+
+  // 버튼 활성화 조건
+  const canSubmit =
+    timer <= 90 && (
+      (!!voiceAnswerText && voiceAnswerText.trim().length > 0) ||
+      (
+        (!voiceAnswerText || voiceAnswerText.trim().length === 0) &&
+        !!answerText && answerText.trim().length > 0
+      )
+    )
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+
+    const IS_TEXT_ANSWER = true;
 
     try {
       if (answerText.trim() === '' && voiceAnswerText.trim() === '') {
@@ -206,13 +226,13 @@ function InterviewSessionContent(
       else {
         if (currentFollowUpIdx === -1) {
           if (voiceAnswerText.trim() === '') {
-            handleMainAnswerSubmit(answerText)
+            handleMainAnswerSubmit(answerText, IS_TEXT_ANSWER)
           } else {
             handleMainAnswerSubmit(voiceAnswerText)
           }
         } else {
           if (voiceAnswerText.trim() === '') {
-            handleFollowUpAnswerSubmit(answerText)
+            handleFollowUpAnswerSubmit(answerText, IS_TEXT_ANSWER)
           } else {
             handleFollowUpAnswerSubmit(voiceAnswerText)
           }
@@ -268,6 +288,14 @@ function InterviewSessionContent(
       audioRef.current.play().catch(e => console.error('오디오 재생 에러:', e))
     }
   }
+
+  useEffect(() => {
+    if (isAnswering) {
+      if (wsRef.current === null) {
+        connectWsAsync()
+      }
+    }
+  }, [isAnswering])
 
   // 타이머 감소 useEffect (UI 실시간 갱신)
   useEffect(() => {
@@ -427,13 +455,12 @@ function InterviewSessionContent(
             {/* Action Buttons & 녹음/녹화 상태 표시 */}
             <div className="mt-auto">
               {!isAnswering ? (
-                <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={() => {
+                <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={async () => {
                   if (wsRef.current && wsRef.current.isConnected()) {
                     handleStartAnswering()
                   } else {
-                    connectWsAsync().then(() => {
-                      handleStartAnswering()
-                    })
+                    await connectWsAsync()
+                    handleStartAnswering()
                   }
                 }}>
                   답변 시작
@@ -446,13 +473,16 @@ function InterviewSessionContent(
                     rows={3}
                     placeholder="답변을 텍스트로 입력해도 좋아요!"
                     value={answerText}
-                    onChange={e => setAnswerText(e.target.value)}
+                    onChange={e => {
+                      setAnswerText(e.target.value)
+                      setIsProcessing(false)
+                    }}
                     disabled={isSubmitting}
                   />
                   <Button
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleSubmit}
-                    disabled={isSubmitting || isProcessing || timer > 90}
+                    disabled={isSubmitting || isProcessing || !canSubmit}
                   >
                     {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                     답변 제출 {timer > 90 && `${timer - 90}초 남았어요!`}
