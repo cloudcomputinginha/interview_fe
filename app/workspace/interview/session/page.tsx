@@ -455,14 +455,16 @@ function InterviewSessionContent(
             {/* Action Buttons & 녹음/녹화 상태 표시 */}
             <div className="mt-auto">
               {!isAnswering ? (
-                <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={async () => {
-                  if (wsRef.current && wsRef.current.isConnected()) {
-                    handleStartAnswering()
-                  } else {
-                    await connectWsAsync()
-                    handleStartAnswering()
-                  }
-                }}>
+                <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white"
+                  disabled={isSubmitting || !isFeedbackLoading || !isQuestionLoading}
+                  onClick={async () => {
+                    if (wsRef.current && wsRef.current.isConnected()) {
+                      handleStartAnswering()
+                    } else {
+                      await connectWsAsync()
+                      handleStartAnswering()
+                    }
+                  }}>
                   답변 시작
                 </Button>
               ) : (
@@ -482,7 +484,7 @@ function InterviewSessionContent(
                   <Button
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleSubmit}
-                    disabled={isSubmitting || isProcessing || !canSubmit}
+                    disabled={isSubmitting || isProcessing || !canSubmit || !isFeedbackLoading || !isQuestionLoading}
                   >
                     {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                     답변 제출 {timer > 90 && `${timer - 90}초 남았어요!`}
