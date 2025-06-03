@@ -456,7 +456,6 @@ function InterviewSessionContent(
             <div className="mt-auto">
               {!isAnswering ? (
                 <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-                  disabled={!isFeedbackLoading || !isQuestionLoading}
                   onClick={async () => {
                     if (wsRef.current && wsRef.current.isConnected()) {
                       handleStartAnswering()
