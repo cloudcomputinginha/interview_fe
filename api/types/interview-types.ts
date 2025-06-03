@@ -240,3 +240,36 @@ export interface ResumeSimpleDTO {
   resumeId?: number;
   fileUrl?: string;
 }
+
+// === AI 인터뷰 세션 관련 타입 (FastAPI 기반) ===
+
+export interface Cursor {
+  qIdx: number;
+  fIdx: number;
+}
+
+export interface FollowUpQA {
+  question: string;
+  audioPath: string;
+  answer?: string | null;
+}
+
+export interface QA {
+  question: string;
+  audioPath: string;
+  answer?: string | null;
+  followUpLength: number;
+  followUps?: FollowUpQA[] | null;
+  feedback?: string | null;
+}
+
+export interface InterviewSession {
+  interviewId: string;
+  memberInterviewId: string;
+  sessionId: string;
+  cursor: Cursor;
+  videoPath?: string | null;
+  questionLength: number;
+  qaFlow: QA[];
+  finalReport?: string | null;
+}
