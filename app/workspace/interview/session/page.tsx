@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter } from '@/components/
 
 export default function InterviewSessionPage() {
 
-  const sessionCtx = useInterviewSession('2', '2')
+  const sessionCtx = useInterviewSession('2', String(Math.floor(Math.random() * 100_000_000) + 1))
   const [isStarted, setIsStarted] = useState(false)
   const wsRef = useRef<AIInterviewSocket | null>(null)
   const [voiceAnswerText, setVoiceAnswerText] = useState('')
@@ -456,7 +456,7 @@ function InterviewSessionContent(
             <div className="mt-auto">
               {!isAnswering ? (
                 <Button className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-                  disabled={isSubmitting || !isFeedbackLoading || !isQuestionLoading}
+                  disabled={!isFeedbackLoading || !isQuestionLoading}
                   onClick={async () => {
                     if (wsRef.current && wsRef.current.isConnected()) {
                       handleStartAnswering()
