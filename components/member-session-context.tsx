@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface MemberSessionContextProps {
     memberId: number | null
@@ -42,15 +42,16 @@ export function useMemberSession() {
     return ctx
 }
 
-export function useRequireMemberId() {
+export function useRequireMemberId(excludePaths: string[] = []) {
     const { memberId } = useMemberSession();
     const router = useRouter()
+    const pathname = usePathname()
 
     useEffect(() => {
-        if (!memberId) {
+        if (!memberId && !excludePaths.includes(pathname)) {
             router.replace('/login')
         }
-    }, [memberId, router])
+    }, [memberId, pathname])
 
     return memberId
 } 
