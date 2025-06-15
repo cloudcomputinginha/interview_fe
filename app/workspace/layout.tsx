@@ -5,7 +5,9 @@ import { useRequireMemberId } from '@/components/member-session-context'
 import { usePathname } from 'next/navigation'
 
 const EXCLUDE_PATHS = [
-    '/workspace/interview/session'
+    '/workspace/interview/session',
+    '/login',
+    '/workspace/loading'
 ]
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
@@ -22,6 +24,6 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
     }, [memberId, pathname])
 
     if (!memberId && !EXCLUDE_PATHS.includes(pathname)) return null
-    
+
     return <>{children}</>
 } 

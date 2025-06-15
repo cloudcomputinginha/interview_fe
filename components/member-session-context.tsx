@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { serverFetch } from '@/utils/fetch/fetch'
 
 interface MemberSessionContextProps {
     memberId: number | null
@@ -24,9 +25,12 @@ export function MemberSessionProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('memberId', String(id))
     }
 
-    const logout = () => {
+    const logout = async () => {
+        await serverFetch.del('/auth/logout')
         setMemberId(null)
         localStorage.removeItem('memberId')
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
     }
 
     return (

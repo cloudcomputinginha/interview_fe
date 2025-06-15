@@ -105,20 +105,6 @@ export default function WorkspacePage() {
     },
   })
 
-  const addQuestionAnswerPair = () => {
-    setQuestionAnswerPairs([...questionAnswerPairs, { id: questionAnswerPairs.length + 1, question: "", answer: "" }])
-  }
-
-  const removeQuestionAnswerPair = (id: number) => {
-    if (questionAnswerPairs.length > 1) {
-      setQuestionAnswerPairs(questionAnswerPairs.filter((pair) => pair.id !== id))
-    }
-  }
-
-  const updateQuestionAnswerPair = (id: number, field: "question" | "answer", value: string) => {
-    setQuestionAnswerPairs(questionAnswerPairs.map((pair) => (pair.id === id ? { ...pair, [field]: value } : pair)))
-  }
-
   if (!memberId) return null
 
   return (
@@ -155,12 +141,6 @@ export default function WorkspacePage() {
               </Dialog>
               <Button variant="outline" className="text-sm" onClick={() => setResumeDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> 이력서 업로드
-              </Button>
-              <Button
-                className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-                onClick={() => (window.location.href = "/workspace/interview/start")}
-              >
-                <Plus className="mr-2 h-4 w-4" /> 새 면접 시작
               </Button>
             </div>
           </div>
@@ -306,7 +286,8 @@ export default function WorkspacePage() {
       <Dialog open={detailResumeDialogOpen} onOpenChange={setDetailResumeDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>이력서 상세보기</DialogTitle>
+            <DialogTitle className="mb-2">이력서 상세보기</DialogTitle>
+            <DialogDescription>추후 미리보기를 지원할 예정입니다.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {selectedResumeId ? (

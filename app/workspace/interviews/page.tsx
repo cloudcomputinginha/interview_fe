@@ -68,6 +68,8 @@ export default function InterviewsPage() {
   }
 
   const confirmDelete = () => {
+    alert("현재 지원되지 않는 기능입니다.")
+    return;
     console.log("Deleting interview:", interviewToDelete)
     alert("면접이 성공적으로 삭제되었습니다.")
     setDeleteDialogOpen(false)
@@ -129,7 +131,7 @@ export default function InterviewsPage() {
           {/* Upcoming Interviews */}
           <div className="mb-8">
             <h2 className="text-xl font-bold mb-4">예정된 면접</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid lg:grid-cols-2 gap-4">
               {upcomingInterviews.length === 0 && <div className="col-span-3 text-gray-400">예정된 면접이 없습니다.</div>}
               {upcomingInterviews.map(({ myInterviewCardDTO, interviewOptionPreviewDTO }) => (
                 <Card key={myInterviewCardDTO.interviewId} className="h-full hover:shadow-md transition-shadow">

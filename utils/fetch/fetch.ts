@@ -49,7 +49,7 @@ async function fetchWithAuthRetry(
     if (!refreshToken) throw new Error("로그인 만료");
 
     // 리프레시 토큰으로 새 토큰 요청 (엔드포인트는 예시)
-    const refreshRes = await fetch("/api/auth/refresh", {
+    const refreshRes = await fetch("/auth/reissue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
@@ -157,11 +157,27 @@ function createFetch(baseURL: string) {
     return text.length > 0 ? (JSON.parse(text) as T) : response.ok;
   };
 
+  const del = async <T = boolean, K = unknown>(
+    url: string,
+    body?: K
+  ): Promise<T | boolean> => {
+    const input = `${baseURL}${url}`;
+    const response = await fetchWithAuthRetry(input, {
+      method: "DELETE",
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error("UnExpected Error");
+    }
+    return response.ok;
+  };
+
   return {
     get,
     post,
     put,
     patch,
+    del,
   };
 }
 
