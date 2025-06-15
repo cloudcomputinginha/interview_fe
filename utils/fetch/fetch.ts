@@ -43,7 +43,7 @@ async function fetchWithAuthRetry(
   };
   const response = await fetch(input, { ...init, headers });
 
-  if (response.status === 401 && retry) {
+  if (response.status === 403 && retry) {
     // 액세스 토큰 만료로 간주
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error("로그인 만료");
