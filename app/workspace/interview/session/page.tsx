@@ -33,7 +33,8 @@ export default function InterviewSessionPage() {
     ) {
       wsRef.current = new AIInterviewSocket()
       wsRef.current.connect(
-        sessionCtx.session.sessionId,
+        sessionCtx.session.interviewId,
+        sessionCtx.session.memberInterviewId,
         sessionCtx.currentQuestionIdx,
         sessionCtx.currentFollowUpIdx
       )
