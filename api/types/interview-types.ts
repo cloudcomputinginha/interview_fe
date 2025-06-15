@@ -273,3 +273,36 @@ export interface InterviewSession {
   qaFlow: QA[];
   finalReport?: string | null;
 }
+
+export interface InterviewCardDTO {
+  interviewId: number;
+  name: string;
+  corporateName: string;
+  jobName: string;
+  currentParticipants: number;
+  maxParticipants: number;
+  startedAt: string;
+  endedAt?: string;
+}
+
+export interface InterviewOptionPreviewDTO {
+  interviewFormat: "INDIVIDUAL" | "GROUP";
+  interviewType: "PERSONALITY" | "TECHNICAL";
+}
+
+export interface MyInterviewDTO {
+  myInterviewCardDTO: InterviewCardDTO;
+  interviewOptionPreviewDTO: InterviewOptionPreviewDTO;
+  memberInterviewStatusDTO: MemberInterviewStatusDTO;
+}
+
+export interface MyInterviewListDTO {
+  myInterviews: MyInterviewDTO[];
+}
+
+export interface ApiResponseMyInterviewListDTO {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: MyInterviewListDTO;
+}

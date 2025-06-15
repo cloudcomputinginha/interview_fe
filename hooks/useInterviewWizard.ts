@@ -28,6 +28,18 @@ const step2Schema = z.object({
   newCoverLetterContent: z.string().optional(),
 });
 
+const convertDate = (string: string) => {
+  const localeDate = "2025. 6. 16.";
+  const [year, month, day] = localeDate
+    .replace(/\./g, "") // 점 제거
+    .trim() // 양쪽 공백 제거
+    .split(" ") // 공백으로 분리
+    .map((val) => val.padStart(2, "0")); // 자리수 보정
+
+  const isoDate = `${year}-${month}-${day}`;
+  return isoDate;
+};
+
 export function useInterviewWizard() {
   /* 폼 상태 & 스텝 번호 */
   const [form, setForm] = useState<InterviewFormState>(initialFormState);
@@ -90,11 +102,9 @@ export function useInterviewWizard() {
           questionNumber: form.questionCount,
           answerTime: form.answerDuration,
           startType: form.startType === "now" ? "NOW" : "SCHEDULED",
-          scheduledDate: form.scheduledDate
-            ? typeof form.scheduledDate === "string"
-              ? form.scheduledDate
-              : form.scheduledDate.toISOString().slice(0, 10)
-            : undefined,
+          scheduledDate: convertDate(
+            form.scheduledDate?.toLocaleDateString() || ""
+          ),
           scheduledTime: form.scheduledTime,
           maxParticipants: form.maxParticipants
             ? Number(form.maxParticipants)

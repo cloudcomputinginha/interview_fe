@@ -4,10 +4,7 @@ import { Button } from "@/components/ui/button"
 
 export function KakaoLoginButton() {
   const handleKakaoLogin = () => {
-    // This would be replaced with actual Kakao login implementation
-    console.log("Kakao login initiated")
-    // Redirect to consent page after successful OAuth
-    window.location.href = "/login/consent"
+    alert('카카오 로그인은 추후 지원될 예정입니다.')
   }
 
   return (

@@ -29,12 +29,12 @@ export function CommunityLayout({ children, activeItem = "home" }: CommunityLayo
       icon: FileText,
       id: "documents",
     },
-    {
-      name: "일정",
-      href: "/workspace/calendar",
-      icon: Calendar,
-      id: "calendar",
-    },
+    // {
+    //   name: "일정",
+    //   href: "/workspace/calendar",
+    //   icon: Calendar,
+    //   id: "calendar",
+    // },
     {
       name: "프로필",
       href: "/workspace/profile",

@@ -5,20 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { X, AlertCircle, Loader2 } from "lucide-react"
 import { useInterviewSession } from './hooks/use-interview-session'
+import { generateMockSessionId } from "@/utils/session/generateMockSessionId"
 import { AnimatePresence, motion } from 'framer-motion'
 import { AIInterviewSocket } from '@/api/ai-interview-socket'
 import { RealtimeProvider } from './hooks/use-interview-realtime'
 import { useInterviewRealtime } from './hooks/use-interview-realtime'
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from '@/components/ui/dialog'
+import { WebcamView } from './webcam-view'
 
 
 export default function InterviewSessionPage() {
 
-  const sessionCtx = useInterviewSession('2', String(Math.floor(Math.random() * 100_000_000) + 1))
-  const [isStarted, setIsStarted] = useState(false)
-  const wsRef = useRef<AIInterviewSocket | null>(null)
-  const [voiceAnswerText, setVoiceAnswerText] = useState('')
+  const sessionCtx = useInterviewSession('2', generateMockSessionId())
 
+  const wsRef = useRef<AIInterviewSocket | null>(null)
+
+  const [isStarted, setIsStarted] = useState(false)
+  const [voiceAnswerText, setVoiceAnswerText] = useState('')
   const [isProcessing, setIsProcessing] = useState(true)
 
   const connectWs = useCallback(() => {
@@ -340,7 +343,6 @@ function InterviewSessionContent(
 
         <div className="flex-1 flex flex-col md:flex-row">
           <div className="flex-1 p-4 flex flex-col">
-
             <AnimatePresence mode="wait">
               <motion.div
                 key={questionNumber + currentQuestionText}
@@ -391,15 +393,7 @@ function InterviewSessionContent(
 
               <div className="flex-1 bg-gray-800 rounded-lg flex flex-col items-center justify-center relative">
                 <div className="absolute top-3 left-3 bg-gray-900/50 px-2 py-1 rounded text-xs">나</div>
-                {isAnswering ? (
-                  <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center">
-                    <span className="text-gray-400 text-4xl font-bold">Me</span>
-                  </div>
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center">
-                    <span className="text-gray-400 text-4xl font-bold">Me</span>
-                  </div>
-                )}
+                <WebcamView />
               </div>
             </div>
             {/* 

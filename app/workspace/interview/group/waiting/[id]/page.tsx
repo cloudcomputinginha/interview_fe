@@ -1,45 +1,74 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Clock, CheckCircle, AlertCircle, Info } from "lucide-react"
+import { ArrowLeft, Clock, AlertCircle, Info } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { useQuery } from "@tanstack/react-query"
+import { getGroupInterviewDetail } from "@/api/interview"
+import { useRouter } from "next/navigation"
+import { useMemberSession } from '@/components/member-session-context'
+import { useWaitingRoomSocket } from "@/utils/socket/use-waiting-room-socket"
+import { Badge } from '@/components/ui/badge'
+import { Users, User, Brain } from 'lucide-react'
+import { formatCountdownString } from '@/utils/date/convertAllDate'
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { CheckCircle } from "lucide-react"
 
-export default function InterviewWaitingRoomPage({ params }: { params: { id: string } }) {
-  const interviewId = params.id
+export default function InterviewWaitingRoomPage({ params }: { params: Promise<{ id: string }> }) {
+
+  const { id: interviewId } = use(params) as { id: string }
+  const { memberId } = useMemberSession()
+  const { participants, error: socketError } = useWaitingRoomSocket(Number(interviewId), Number(memberId))
   const [countdown, setCountdown] = useState<{ minutes: number; seconds: number }>({ minutes: 5, seconds: 0 })
-  const [isHost, setIsHost] = useState(true) // For demo purposes, set to true
   const [isStarting, setIsStarting] = useState(false)
   const [progressValue, setProgressValue] = useState(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const router = useRouter()
 
-  // Mock data for the interview
-  const interview = {
-    id: Number.parseInt(interviewId),
-    title: "삼성전자 상반기 공채 대비 모의면접",
-    scheduledTime: new Date(new Date().getTime() + 5 * 60 * 1000), // 5 minutes from now for demo
-    participants: [
-      { id: 1, name: "김지원", isHost: true, isJoined: true },
-      { id: 2, name: "이민수", isHost: false, isJoined: true },
-      { id: 3, name: "박서연", isHost: false, isJoined: false },
-    ],
+
+  const { data: interview } = useQuery({
+    queryKey: ["interview", interviewId],
+    queryFn: () => getGroupInterviewDetail(Number(interviewId)),
+    select: (data) => data.result,
+    enabled: !!interviewId,
+  })
+
+  const isHost = interview?.groupInterviewParticipants?.find((p) => p.host)?.memberId === memberId
+
+  // 인터뷰 시간으로 이미 종료된 면접인지, 아닌지 판단하기
+  if (interview?.startedAt && new Date(interview.startedAt) < new Date()) {
+    alert("이미 시작된 면접이거나, 종료된 면접입니다.")
+    router.replace("/workspace/interviews")
+    return;
   }
 
-  // 참가자 중 입장한 사람만 필터링
-  const joinedParticipants = interview.participants.filter((p) => p.isJoined)
+  useEffect(() => {
+    if (socketError) {
+      alert(socketError)
+      if (socketError === '해당하는 사용자 인터뷰를 찾을 수 없습니다.') {
+        router.replace("/workspace/interviews")
+      }
 
-  // 타이머 참조를 위한 useRef 추가
-  const timer = useRef<NodeJS.Timeout | null>(null)
+      if (socketError === '인터뷰가 이미 시작되어 입장할 수 없습니다.') {
+        router.replace("/workspace/interviews")
+      }
+
+      else {
+        console.error(socketError)
+      }
+    }
+  }, [socketError])
 
   // Calculate countdown to interview start
   useEffect(() => {
+    if (!interview?.startedAt) return;
+
     const calculateCountdown = () => {
       const now = new Date()
-      const difference = interview.scheduledTime.getTime() - now.getTime()
+      const difference = interview?.startedAt ? new Date(interview.startedAt).getTime() - now.getTime() : 0
 
       if (difference <= 0) {
         // Time to start the interview
@@ -70,12 +99,12 @@ export default function InterviewWaitingRoomPage({ params }: { params: { id: str
         clearInterval(timerRef.current)
       }
     }
-  }, []) // 빈 의존성 배열 사용 (컴포넌트 마운트 시 한 번만 실행)
+  }, [interview?.startedAt]) // 빈 의존성 배열 사용 (컴포넌트 마운트 시 한 번만 실행)
 
   // 면접 시작 함수 수정
   const startInterview = useCallback(() => {
     // 참가자가 없으면 시작 불가
-    if (joinedParticipants.length === 0) {
+    if (participants?.length === 0) {
       alert("참가자가 없어 면접을 시작할 수 없습니다.")
       return
     }
@@ -87,9 +116,14 @@ export default function InterviewWaitingRoomPage({ params }: { params: { id: str
       // Redirect to the interview session
       window.location.href = "/workspace/interview/group/session"
     }, 3000)
-  }, [joinedParticipants.length])
+  }, [participants?.length])
 
   const handleEarlyStart = () => {
+    if (!isHost) {
+      alert("면접 호스트만 면접을 시작할 수 있습니다.")
+      return
+    }
+
     if (confirm("면접을 지금 시작하시겠습니까? 모든 참가자에게 알림이 전송됩니다.")) {
       startInterview()
     }
@@ -129,8 +163,29 @@ export default function InterviewWaitingRoomPage({ params }: { params: { id: str
           >
             <ArrowLeft className="h-4 w-4 mr-1" /> 내 면접으로 돌아가기
           </Link>
-          <h1 className="text-2xl font-bold">면접 대기 중...</h1>
-          <p className="text-gray-600 mt-2">{interview.title}</p>
+          <h1 className="text-2xl font-bold">{interview?.name ?? '-'}</h1>
+          <div className="text-gray-600 mt-2 text-sm">
+            <div className="mb-1">{interview?.description ?? ''}</div>
+            <div className="flex flex-wrap gap-2 mt-2 items-center">
+              {/* 면접 형태 뱃지들 */}
+              {interview?.interviewType && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Brain className="h-3 w-3 mr-1 text-[#8FD694]" />
+                  {interview?.interviewType === 'PERSONALITY' ? '인성 면접' : interview?.interviewType === 'TECHNICAL' ? '기술 면접' : '-'}
+                </Badge>
+              )}
+              {interview?.maxParticipants === 1 ? (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <User className="h-3 w-3 mr-1 text-gray-400" />개인 면접
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Users className="h-3 w-3 mr-1 text-gray-400" />그룹 면접
+                </Badge>
+              )}
+
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -138,26 +193,23 @@ export default function InterviewWaitingRoomPage({ params }: { params: { id: str
           <div className="md:col-span-2">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle>면접 시작 카운트다운</CardTitle>
+                <CardTitle>면접 시작</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <div className="w-24 h-24 rounded-full bg-[#8FD694] bg-opacity-20 flex items-center justify-center mb-6">
                   <Clock className="h-12 w-12 text-[#8FD694]" />
                 </div>
-                <div className="text-4xl font-bold mb-4">{formatTime(countdown.minutes, countdown.seconds)}</div>
-                <p className="text-gray-600 mb-6">
-                  {countdown.minutes > 0
-                    ? `${countdown.minutes}분 ${countdown.seconds}초 후 시작 예정`
-                    : `${countdown.seconds}초 후 시작 예정`}
-                </p>
+                <div className="text-4xl font-bold mb-4">{formatCountdownString(countdown.minutes * 60 + countdown.seconds)}</div>
+                <div className="flex items-center gap-1 text-gray-400 mb-4">
+                  <Clock className="h-3 w-3 mr-1" />
+                  시작시간: {interview?.startedAt ? new Date(interview.startedAt).toLocaleString('ko-KR') : '-'}
+                </div>
                 <Progress value={progressValue} className="w-full max-w-md h-2" />
               </CardContent>
               <CardFooter className="flex justify-center border-t pt-6">
-                {isHost && (
-                  <Button className="bg-[#8FD694] hover:bg-[#7ac47f] text-white" onClick={handleEarlyStart}>
-                    지금 시작하기
-                  </Button>
-                )}
+                <Button className={`bg-[#8FD694] hover:bg-[#7ac47f] text-white ${!isHost ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={handleEarlyStart}>
+                  지금 시작하기
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -170,29 +222,39 @@ export default function InterviewWaitingRoomPage({ params }: { params: { id: str
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {joinedParticipants.length > 0 ? (
-                    joinedParticipants.map((participant) => (
-                      <div key={participant.id} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Avatar className="h-8 w-8 mr-3">
-                            <AvatarFallback className="bg-[#8FD694] text-white">
-                              {participant.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{participant.name}</span>
-                        </div>
-                        <div className="flex items-center">
-                          {participant.isHost && <Badge className="bg-[#8FD694] hover:bg-[#8FD694] mr-2">호스트</Badge>}
-                          <div className="flex items-center text-[#8FD694]">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            <span className="text-xs">입장</span>
+                  {interview?.groupInterviewParticipants && interview.groupInterviewParticipants.length > 0 ? (
+                    interview.groupInterviewParticipants.map((p) => {
+                      const isEntered = typeof p.memberId === 'number' && participants?.includes(p.memberId)
+                      return (
+                        <div key={p.memberId} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Avatar className="h-8 w-8 mr-3">
+                              <AvatarFallback className="bg-[#8FD694] text-white">
+                                {p.name?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{p.name}</span>
+                          </div>
+                          <div className="flex items-center">
+                            {p.host && <Badge className="bg-[#8FD694] hover:bg-[#8FD694] mr-2">호스트</Badge>}
+                            {isEntered ? (
+                              <div className="flex items-center text-[#8FD694]">
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                <span className="text-xs">입장</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center text-gray-400">
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                <span className="text-xs">미입장</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="text-center py-4 text-gray-500">
-                      <p>아직 입장한 참가자가 없습니다.</p>
+                      <p>아직 참가자가 없습니다.</p>
                     </div>
                   )}
                 </div>

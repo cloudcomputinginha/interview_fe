@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Mail, Calendar, Clock, Users, Play } from 'lucide-react'
@@ -18,75 +18,33 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CommunityLayout } from "@/components/community-layout"
 import { HeaderWithNotifications } from "@/components/header-with-notifications"
+import { getMyInterviewList } from '@/api/interview'
+import { useQuery } from '@tanstack/react-query'
+import { useMemberSession } from '@/components/member-session-context'
+import { useRouter } from "next/navigation"
+import { InterviewCardDTO, MyInterviewDTO, MyInterviewListDTO } from "@/api/types/interview-types"
 
 export default function InterviewsPage() {
-  // Mock data for past interviews
-  const pastInterviews = [
-    { id: 1, title: "삼성전자 신입 공채", date: "2023-05-15", score: "A", company: "삼성전자", position: "SW개발" },
-    {
-      id: 2,
-      title: "네이버 개발자 인턴십",
-      date: "2023-04-22",
-      score: "B+",
-      company: "네이버",
-      position: "백엔드개발",
-    },
-    {
-      id: 3,
-      title: "현대자동차 상반기 공채",
-      date: "2023-03-10",
-      score: "A-",
-      company: "현대자동차",
-      position: "IT개발",
-    },
-    { id: 4, title: "카카오 UX 디자이너", date: "2023-02-28", score: "S", company: "카카오", position: "UX디자인" },
-  ]
-
-  // Mock data for upcoming interviews
-  const upcomingInterviews = [
-    {
-      id: 101,
-      title: "삼성전자 상반기 공채 대비 모의면접",
-      date: "2023-06-10T14:00:00",
-      type: "group",
-      participants: 3,
-      maxParticipants: 4,
-      isHost: true,
-      status: "scheduled",
-      field: "개발",
-      company: "삼성전자",
-      position: "SW개발",
-    },
-    {
-      id: 102,
-      title: "네이버 기술 면접 연습",
-      date: "2023-06-15T10:00:00",
-      type: "individual",
-      status: "scheduled",
-      field: "개발",
-      company: "네이버",
-      position: "백엔드개발",
-    },
-    {
-      id: 103,
-      title: "카카오 인턴십 모의면접",
-      date: "2023-06-18T16:00:00",
-      type: "group",
-      participants: 2,
-      maxParticipants: 5,
-      isHost: false,
-      status: "pending",
-      field: "디자인",
-      company: "카카오",
-      position: "UX디자인",
-    },
-  ]
-
+  const router = useRouter()
+  const { memberId } = useMemberSession()
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [selectedInterview, setSelectedInterview] = useState<any>(null)
   const [inviteEmail, setInviteEmail] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [interviewToDelete, setInterviewToDelete] = useState<any>(null)
+
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['myInterviewList', memberId],
+    queryFn: () => getMyInterviewList(memberId!),
+    enabled: !!memberId,
+    select: (res) => res.result.myInterviews,
+  })
+
+  const interviews = data || []
 
   const handleInvite = (interview: any) => {
     setSelectedInterview(interview)
@@ -115,9 +73,18 @@ export default function InterviewsPage() {
     setDeleteDialogOpen(false)
   }
 
-  const handleStartInterview = (interview: any) => {
-    // 면접 세션으로 직접 이동 (리다이렉트 없이)
-    window.location.href = `/workspace/interview/session`
+  const handleStartInterview = ({
+    interview,
+    interviewFormat
+  }: {
+    interview: InterviewCardDTO,
+    interviewFormat: 'GROUP' | 'INDIVIDUAL'
+  }) => {
+    if (interviewFormat === 'GROUP') {
+      router.push(`/workspace/interview/group/waiting/${interview.interviewId}`)
+    } else {
+      router.push(`/workspace/interview/individual/waiting/${interview.interviewId}`)
+    }
   }
 
   // Format date for display
@@ -131,6 +98,16 @@ export default function InterviewsPage() {
     }
     return new Date(dateString).toLocaleDateString("ko-KR", options)
   }
+
+  if (loading) return <div className="p-6">로딩 중...</div>
+  if (queryError) return <div className="p-6 text-red-500">{queryError instanceof Error ? queryError.message : '에러 발생'}</div>
+
+  const upcomingInterviews = interviews.filter(
+    (i) => i.memberInterviewStatusDTO.status === 'SCHEDULED' || i.memberInterviewStatusDTO.status === 'IN_PROGRESS'
+  )
+  const pastInterviews = interviews.filter(
+    (i) => i.memberInterviewStatusDTO.status === 'DONE' || i.memberInterviewStatusDTO.status === 'NO_SHOW'
+  )
 
   return (
     <>
@@ -153,36 +130,45 @@ export default function InterviewsPage() {
           <div className="mb-8">
             <h2 className="text-xl font-bold mb-4">예정된 면접</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {upcomingInterviews.map((interview) => (
-                <Card key={interview.id} className="h-full hover:shadow-md transition-shadow">
+              {upcomingInterviews.length === 0 && <div className="col-span-3 text-gray-400">예정된 면접이 없습니다.</div>}
+              {upcomingInterviews.map(({ myInterviewCardDTO, interviewOptionPreviewDTO }) => (
+                <Card key={myInterviewCardDTO.interviewId} className="h-full hover:shadow-md transition-shadow">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start mb-3">
                       <Badge
                         className={
-                          interview.type === "individual"
-                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                            : "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                          interviewOptionPreviewDTO.interviewFormat === 'INDIVIDUAL'
+                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+                            : 'bg-purple-100 text-purple-800 hover:bg-purple-100'
                         }
                       >
-                        {interview.type === "individual" ? "개인 면접" : "그룹 면접"}
+                        {interviewOptionPreviewDTO.interviewFormat === 'INDIVIDUAL' ? '개인 면접' : '그룹 면접'}
                       </Badge>
-                      <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{interview.field}</Badge>
+                      <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{myInterviewCardDTO.corporateName}</Badge>
                     </div>
-                    <h3 className="font-medium text-lg mb-2 line-clamp-2">{interview.title}</h3>
+                    <h3 className="font-medium text-lg mb-2 line-clamp-2">{myInterviewCardDTO.name}</h3>
                     <div className="text-sm text-gray-600 mb-3">
                       <p>
-                        {interview.company} • {interview.position}
+                        {myInterviewCardDTO.corporateName} • {myInterviewCardDTO.jobName}
                       </p>
                     </div>
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <Calendar className="h-4 w-4 mr-1" />
-                      <span>{formatDate(interview.date)}</span>
+                      <span>{formatDate(myInterviewCardDTO.startedAt)}</span>
                     </div>
-                    {interview.type === "group" && (
+                    {interviewOptionPreviewDTO.interviewFormat === 'GROUP' && (
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="h-4 w-4 mr-1" />
                         <span>
-                          {interview.participants}/{interview.maxParticipants}명 참여 중
+                          {myInterviewCardDTO.currentParticipants}/{myInterviewCardDTO.maxParticipants}명 참여 중
+                        </span>
+                      </div>
+                    )}
+                    {interviewOptionPreviewDTO.interviewFormat === 'INDIVIDUAL' && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="h-4 w-4 mr-1" />
+                        <span>
+                          개인
                         </span>
                       </div>
                     )}
@@ -190,37 +176,30 @@ export default function InterviewsPage() {
                   <CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-between items-center">
                     <div className="flex items-center text-sm">
                       <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                      <span>{interview.status === "scheduled" ? "예약됨" : "대기 중"}</span>
+                      <span>예약됨</span>
                     </div>
                     <div className="flex space-x-2">
                       <Button
                         size="sm"
                         className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-                        onClick={() => handleStartInterview(interview)}
+                        onClick={() => handleStartInterview({
+                          interview: myInterviewCardDTO,
+                          interviewFormat: interviewOptionPreviewDTO.interviewFormat
+                        })}
                       >
                         <Play className="h-4 w-4 mr-1" />
-                        시작
+                        입장하기
                       </Button>
-                      <Link href={`/workspace/interviews/edit/${interview.id}`}>
+                      <Link href={`/workspace/interviews/edit/${myInterviewCardDTO.interviewId}`}>
                         <Button variant="outline" size="sm">
                           수정
                         </Button>
                       </Link>
-                      {interview.isHost && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700"
-                          onClick={() => handleInvite(interview)}
-                        >
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                      )}
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDelete(interview)}
+                        onClick={() => handleDelete(myInterviewCardDTO)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -235,32 +214,22 @@ export default function InterviewsPage() {
           <div>
             <h2 className="text-xl font-bold mb-4">과거 면접</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pastInterviews.map((interview) => (
-                <Card key={interview.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              {pastInterviews.length === 0 && <div className="col-span-3 text-gray-400">과거 면접이 없습니다.</div>}
+              {pastInterviews.map(({ myInterviewCardDTO }) => (
+                <Card key={myInterviewCardDTO.interviewId} className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start mb-3">
                       <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">과거 면접</Badge>
-                      <Badge
-                        className={
-                          interview.score.startsWith("A+") || interview.score === "S"
-                            ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                            : interview.score.startsWith("A")
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                        }
-                      >
-                        {interview.score}
-                      </Badge>
                     </div>
-                    <h3 className="font-medium text-lg mb-2">{interview.title}</h3>
+                    <h3 className="font-medium text-lg mb-2">{myInterviewCardDTO.name}</h3>
                     <div className="text-sm text-gray-600 mb-3">
                       <p>
-                        {interview.company} • {interview.position}
+                        {myInterviewCardDTO.corporateName} • {myInterviewCardDTO.jobName}
                       </p>
                     </div>
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="h-4 w-4 mr-1" />
-                      <span>{interview.date}</span>
+                      <span>{myInterviewCardDTO.startedAt}</span>
                     </div>
                   </CardContent>
                   <CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">

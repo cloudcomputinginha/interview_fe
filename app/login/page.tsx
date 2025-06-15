@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { KakaoLoginButton } from "@/components/kakao-login-button"
+import { GoogleLoginButton } from '@/components/google-login-button'
 import { useMemberSession } from '../../components/member-session-context'
 
 export default function LoginPage() {
@@ -29,6 +30,7 @@ export default function LoginPage() {
 
             <div className="space-y-4">
               <KakaoLoginButton />
+              <GoogleLoginButton />
 
               <p className="text-sm text-center text-gray-500 mt-4">간편하게 로그인하고 면접을 시작하세요</p>
 

@@ -30,12 +30,12 @@ export function AppLayout({ children, activeItem = "home" }: AppLayoutProps) {
       icon: FileText,
       id: "documents",
     },
-    {
-      name: "일정",
-      href: "/workspace/calendar",
-      icon: Calendar,
-      id: "calendar",
-    },
+    // {
+    //   name: "일정",
+    //   href: "/workspace/calendar",
+    //   icon: Calendar,
+    //   id: "calendar",
+    // },
     {
       name: "프로필",
       href: "/workspace/profile",
@@ -70,11 +70,10 @@ export function AppLayout({ children, activeItem = "home" }: AppLayoutProps) {
                 <li key={item.id}>
                   <Link
                     href={item.href}
-                    className={`flex items-center space-x-3 p-2 rounded-md ${
-                      activeItem === item.id
-                        ? "bg-[#8FD694] bg-opacity-10 text-[#8FD694]"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`flex items-center space-x-3 p-2 rounded-md ${activeItem === item.id
+                      ? "bg-[#8FD694] bg-opacity-10 text-[#8FD694]"
+                      : "text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     <item.icon className="h-5 w-5" />
                     <span>{item.name}</span>

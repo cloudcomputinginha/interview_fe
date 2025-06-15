@@ -13,6 +13,7 @@ import {
   ApiResponseListInterviewGroupCardDTO,
   ApiResponseGroupInterviewDetailDTO,
   ApiResponseInterviewStartResponseDTO,
+  ApiResponseMyInterviewListDTO,
 } from "./types/interview-types";
 
 // 면접 생성
@@ -90,8 +91,10 @@ export async function terminateInterview(
 }
 
 // 내 인터뷰 리스트 조회
-export async function getMyInterviewList() {
-  return serverFetch.get<any>("/interviews");
+export async function getMyInterviewList(memberId: number) {
+  return serverFetch.get<ApiResponseMyInterviewListDTO>("/mypage/interviews", {
+    memberId,
+  });
 }
 
 // 면접 정보 수정

@@ -27,9 +27,6 @@ import { convertDate } from "@/utils/date/convertDate"
 import { Progress } from "@/components/ui/progress"
 
 export default function WorkspacePage() {
-  const [activeTab, setActiveTab] = useState("resume")
-  const [coverLetterType, setCoverLetterType] = useState<"file" | "manual">("file")
-  const [coverLetterTitle, setCoverLetterTitle] = useState("")
   const [questionAnswerPairs, setQuestionAnswerPairs] = useState([{ id: 1, question: "", answer: "" }])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -203,7 +200,7 @@ export default function WorkspacePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments && filteredDocuments?.length > 0 ? (
               filteredDocuments?.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card key={`${doc.type}-${doc.id}`} className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5 w-fit">
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <Badge
