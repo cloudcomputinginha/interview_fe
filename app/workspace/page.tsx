@@ -25,6 +25,7 @@ import { findMyCoverletter, createCoverletter, getCoverletterDetail } from "@/ap
 import { getResumeList, getResumeDetail, getPresignedUploadUrl, saveResume } from "@/api/resume"
 import { convertDate } from "@/utils/date/convertDate"
 import { Progress } from "@/components/ui/progress"
+import useSseNotifications from '@/hooks/useSseNotifications'
 
 export default function WorkspacePage() {
   const [questionAnswerPairs, setQuestionAnswerPairs] = useState([{ id: 1, question: "", answer: "" }])
@@ -39,6 +40,7 @@ export default function WorkspacePage() {
 
   const memberId = useRequireMemberId();
   const queryClient = useQueryClient()
+  const { messages: sseMessages } = useSseNotifications()
 
   // 자소서 & 이력서 목록 가져오기
   // TODO : 이력서 API 완성되면 가져오기
@@ -109,6 +111,17 @@ export default function WorkspacePage() {
 
   return (
     <>
+      {/* SSE 알림 메시지 표시 (임시) */}
+      {sseMessages.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-lg p-4 max-w-xs">
+          <div className="font-bold mb-2 text-sm text-gray-700">실시간 알림</div>
+          <ul className="space-y-1 max-h-40 overflow-y-auto text-xs text-gray-600">
+            {sseMessages.map((msg: string, idx: number) => (
+              <li key={idx}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <HeaderWithNotifications />
       <CommunityLayout activeItem="documents">
         <div className="p-6 max-w-6xl mx-auto">

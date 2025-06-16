@@ -748,6 +748,11 @@
 "@types/d3-timer@^3.0.0":
   version "3.0.2"
 
+"@types/eventsource@^1.1.15":
+  version "1.1.15"
+  resolved "https://registry.npmjs.org/@types/eventsource/-/eventsource-1.1.15.tgz"
+  integrity sha512-XQmGcbnxUNa06HR3VBVkc9+A2Vpi9ZyLJcdS5dwaQQ/4ZMWFO+5c90FnMUpbtMZwB/FChoYHwuVg8TvkECacTA==
+
 "@types/node@^22":
   version "22.15.24"
   dependencies:
