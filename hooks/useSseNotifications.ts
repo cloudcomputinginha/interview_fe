@@ -13,7 +13,7 @@ function useSseNotifications() {
     const accessToken = localStorage.getItem("ACCESS_TOKEN");
     const url = "https://interview.play-qr.site/notifications/subscribe";
     const newEventSource = new EventSourcePolyfill(url, {
-      headers: { Authorization: accessToken },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     const eventSource = newEventSource;
     eventSourceRef.current = eventSource;
