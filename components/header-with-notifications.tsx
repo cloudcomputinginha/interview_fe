@@ -19,7 +19,7 @@ interface Notification {
 export function HeaderWithNotifications() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const { notifications: sseNotifications } = useSseNotifications()
+  const { notifications: sseNotifications, sseConnected } = useSseNotifications()
 
   // SSE 알림이 오면 위에 추가
   useEffect(() => {
@@ -113,8 +113,9 @@ export function HeaderWithNotifications() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="relative">
                 <User className="h-5 w-5" />
+                <span className={`absolute w-3 h-3 border-2 border-white rounded-full right-0 bottom-0 ${sseConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
