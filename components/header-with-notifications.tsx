@@ -6,55 +6,33 @@ import { Bell, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import useSseNotifications from '@/hooks/useSseNotifications'
+import { convertDate } from '@/utils/date/convertDate'
 
 interface Notification {
-  id: number
-  type: "interview" | "system"
+  type: "ROOM_ENTRY" | "ROOM_INVITE" | "INTERVIEW_REMINDER_1D" | "INTERVIEW_REMINDER_30M" | "FEEDBACK_RECEIVED"
   message: string
-  link: string
-  time: string
-  read: boolean
+  url: string
+  createdAt: string
 }
 
 export function HeaderWithNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const { notifications: sseNotifications } = useSseNotifications()
 
-  // 실제 구현에서는 API에서 알림을 가져옴
+  // SSE 알림이 오면 위에 추가
   useEffect(() => {
-    // 예정된 면접이 있는지 확인 (실제로는 API에서 가져옴)
-    const mockNotifications: Notification[] = [
-      {
-        id: 1,
-        type: "interview",
-        message: "삼성전자 상반기 공채 대비 모의면접이 10분 후에 시작됩니다.",
-        link: "/workspace/interview/group/waiting/1",
-        time: "방금 전",
-        read: false,
-      },
-      {
-        id: 2,
-        type: "system",
-        message: "새로운 면접 참가 요청이 있습니다.",
-        link: "/workspace/interview/group/community/3",
-        time: "1시간 전",
-        read: false,
-      },
-      {
-        id: 3,
-        type: "interview",
-        message: "면접 피드백이 도착했습니다.",
-        link: "/workspace/interview/report",
-        time: "어제",
-        read: true,
-      },
-    ]
+    if (sseNotifications.length > 0) {
+      setNotifications((prev) => {
+        const newList = [...sseNotifications.map((n, idx) => ({ ...n, id: `sse-${Date.now()}-${idx}`, read: false })), ...prev]
+        return newList
+      })
+      setUnreadCount((prev) => prev + sseNotifications.length)
+    }
+  }, [sseNotifications])
 
-    setNotifications(mockNotifications)
-    setUnreadCount(mockNotifications.filter((n) => !n.read).length)
-  }, [])
-
-  const markAsRead = (id: number) => {
+  const markAsRead = (id: any) => {
     setNotifications((prev) =>
       prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
     )
@@ -107,18 +85,18 @@ export function HeaderWithNotifications() {
                   notifications.map((notification) => (
                     <DropdownMenuItem
                       key={notification.id}
-                      className={`p-3 cursor-pointer ${!notification.read ? "bg-blue-50" : ""}`}
+                      className={`p-3 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
                       onClick={() => {
                         markAsRead(notification.id)
-                        window.location.href = notification.link
+                        window.location.href = notification.url
                       }}
                     >
                       <div className="flex flex-col w-full">
                         <div className="flex justify-between items-start">
                           <span className="font-medium text-sm">
-                            {notification.type === "interview" ? "면접 알림" : "시스템 알림"}
+                            {notification.type === 'ROOM_ENTRY' ? '입장 알림' : notification.type === 'ROOM_INVITE' ? '초대 알림' : notification.type === 'INTERVIEW_REMINDER_1D' || notification.type === 'INTERVIEW_REMINDER_30M' ? '면접 알림' : notification.type === 'FEEDBACK_RECEIVED' ? '피드백 알림' : '알림'}
                           </span>
-                          <span className="text-xs text-gray-500">{notification.time}</span>
+                          <span className="text-xs text-gray-500">{convertDate(notification.createdAt)}</span>
                         </div>
                         <p className="text-sm mt-1">{notification.message}</p>
                       </div>
