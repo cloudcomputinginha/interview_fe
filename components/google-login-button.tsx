@@ -5,7 +5,7 @@ import { serverFetch } from '@/utils/fetch/fetch'
 
 export function GoogleLoginButton() {
     const handleGoogleLogin = async () => {
-        window.location.href = `http://localhost:8080/auth/GOOGLE`
+        window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/GOOGLE`
     }
 
     return (
