@@ -13,7 +13,6 @@ import {
 } from "../session/token-storage";
 
 const baseServerURL = process.env.NEXT_PUBLIC_SERVER_URL;
-const baseServerDevURL = "http://localhost:8080";
 const baseAIServerURL = process.env.NEXT_PUBLIC_AI_SERVER_URL;
 
 if (!baseServerURL) {
@@ -181,9 +180,7 @@ function createFetch(baseURL: string) {
   };
 }
 
-const serverFetch = createFetch(
-  process.env.NODE_ENV === "development" ? baseServerDevURL : baseServerURL
-);
+const serverFetch = createFetch(baseServerURL);
 const aiFetch = createFetch(baseAIServerURL);
 
 export { createFetch, serverFetch, aiFetch };
