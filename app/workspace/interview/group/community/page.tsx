@@ -99,11 +99,11 @@ export default function InterviewCommunityPage() {
                   <Plus className="mr-2 h-4 w-4" /> 새 면접 만들기
                 </Button>
               </Link>
-              <Link href="/workspace/interview/group/community/create">
+              {/* <Link href="/workspace/interview/group/community/create">
                 <Button variant="outline">
                   <Plus className="mr-2 h-4 w-4" /> 모집 글 작성
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -219,11 +219,11 @@ export default function InterviewCommunityPage() {
                 <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-lg font-medium mb-1">모집 글이 없습니다</p>
                 <p className="mb-4">새로운 모집 글을 작성하거나 필터 조건을 변경해보세요.</p>
-                <Link href="/workspace/interview/group/community/create">
+                {/* <Link href="/workspace/interview/group/community/create">
                   <Button className="bg-[#8FD694] hover:bg-[#7ac47f] text-white">
                     <Plus className="mr-2 h-4 w-4" /> 모집 글 작성
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             )}
           </div>

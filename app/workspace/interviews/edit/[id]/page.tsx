@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Upload, AlertCircle, Calendar, Clock, Users, Globe, Lock, Save } from "lucide-react"
@@ -12,8 +12,8 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { updateInterview, updateInterviewOption } from '@/api/interview'
 
-export default function EditInterviewPage({ params }: { params: { id: string } }) {
-  const interviewId = params.id
+export default function EditInterviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: interviewId } = use(params)
 
   // 면접 정보 상태
   const [interview, setInterview] = useState<any>(null)

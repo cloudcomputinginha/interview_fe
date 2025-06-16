@@ -25,11 +25,9 @@ import { findMyCoverletter, createCoverletter, getCoverletterDetail } from "@/ap
 import { getResumeList, getResumeDetail, getPresignedUploadUrl, saveResume } from "@/api/resume"
 import { convertDate } from "@/utils/date/convertDate"
 import { Progress } from "@/components/ui/progress"
+import useSseNotifications from '@/hooks/useSseNotifications'
 
 export default function WorkspacePage() {
-  const [activeTab, setActiveTab] = useState("resume")
-  const [coverLetterType, setCoverLetterType] = useState<"file" | "manual">("file")
-  const [coverLetterTitle, setCoverLetterTitle] = useState("")
   const [questionAnswerPairs, setQuestionAnswerPairs] = useState([{ id: 1, question: "", answer: "" }])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -42,6 +40,7 @@ export default function WorkspacePage() {
 
   const memberId = useRequireMemberId();
   const queryClient = useQueryClient()
+  const { messages: sseMessages } = useSseNotifications()
 
   // 자소서 & 이력서 목록 가져오기
   // TODO : 이력서 API 완성되면 가져오기
@@ -108,24 +107,21 @@ export default function WorkspacePage() {
     },
   })
 
-  const addQuestionAnswerPair = () => {
-    setQuestionAnswerPairs([...questionAnswerPairs, { id: questionAnswerPairs.length + 1, question: "", answer: "" }])
-  }
-
-  const removeQuestionAnswerPair = (id: number) => {
-    if (questionAnswerPairs.length > 1) {
-      setQuestionAnswerPairs(questionAnswerPairs.filter((pair) => pair.id !== id))
-    }
-  }
-
-  const updateQuestionAnswerPair = (id: number, field: "question" | "answer", value: string) => {
-    setQuestionAnswerPairs(questionAnswerPairs.map((pair) => (pair.id === id ? { ...pair, [field]: value } : pair)))
-  }
-
   if (!memberId) return null
 
   return (
     <>
+      {/* SSE 알림 메시지 표시 (임시) */}
+      {sseMessages.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-lg p-4 max-w-xs">
+          <div className="font-bold mb-2 text-sm text-gray-700">실시간 알림</div>
+          <ul className="space-y-1 max-h-40 overflow-y-auto text-xs text-gray-600">
+            {sseMessages.map((msg: string, idx: number) => (
+              <li key={idx}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <HeaderWithNotifications />
       <CommunityLayout activeItem="documents">
         <div className="p-6 max-w-6xl mx-auto">
@@ -158,12 +154,6 @@ export default function WorkspacePage() {
               </Dialog>
               <Button variant="outline" className="text-sm" onClick={() => setResumeDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> 이력서 업로드
-              </Button>
-              <Button
-                className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-                onClick={() => (window.location.href = "/workspace/interview/start")}
-              >
-                <Plus className="mr-2 h-4 w-4" /> 새 면접 시작
               </Button>
             </div>
           </div>
@@ -203,7 +193,7 @@ export default function WorkspacePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments && filteredDocuments?.length > 0 ? (
               filteredDocuments?.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card key={`${doc.type}-${doc.id}`} className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5 w-fit">
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <Badge
@@ -309,7 +299,8 @@ export default function WorkspacePage() {
       <Dialog open={detailResumeDialogOpen} onOpenChange={setDetailResumeDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>이력서 상세보기</DialogTitle>
+            <DialogTitle className="mb-2">이력서 상세보기</DialogTitle>
+            <DialogDescription>추후 미리보기를 지원할 예정입니다.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {selectedResumeId ? (

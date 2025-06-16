@@ -9,14 +9,17 @@ export class AIInterviewSocket {
   private socket: WebSocket | null = null;
   private handler: AIInterviewSocketHandler | null = null;
 
-  connect(sessionId: string, qIndex: number, fIndex: number) {
+  connect(
+    interviewId: string,
+    memberInterviewId: string,
+    qIndex: number,
+    fIndex: number
+  ) {
     if (this.socket) return;
     const baseUrl = process.env.NEXT_PUBLIC_AI_WEBSOCKET_URL;
     if (!baseUrl)
       throw new Error("NEXT_PUBLIC_AI_WEBSOCKET_URL 환경변수가 필요합니다.");
-    const url = `${baseUrl}?session_id=${encodeURIComponent(
-      sessionId
-    )}&index=${qIndex}&f_index=${fIndex}`;
+    const url = `${baseUrl}?interview_id=${interviewId}&member_interview_id=${memberInterviewId}&index=${qIndex}&f_index=${fIndex}`;
     this.socket = new WebSocket(url);
     this.socket.onmessage = (event) => {
       if (this.handler) {

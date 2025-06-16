@@ -1,201 +1,137 @@
 "use client"
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Download, Share2, CheckCircle, XCircle, BarChart, Play } from "lucide-react"
+import { CheckCircle, MessageSquareQuote } from 'lucide-react'
+
+// 실제로는 props나 fetch로 받아야 하지만, 예시로 하드코딩
+const qaFlow = [
+  {
+    question: '디자인 프로세스를 어떻게 진행하나요?',
+    answer: { answer: '아주 잘 진행합니다.' },
+    feedback:
+      '제공된 답변은 디자인 프로세스에 대한 구체적인 설명이 부족합니다. 디자인 프로세스의 각 단계와 그 중요성, 어려웠던 점 등을 상세히 설명하지 않고 단답형으로 답변하였습니다. 면접관은 디자인 프로세스에 대한 지식과 경험을 파악하고자 하는데, 이런 간단한 답변으로는 부족합니다. 디자인 프로세스의 세부 단계, 각 단계의 역할과 중요성, 실제 경험에서 어려웠던 점 등을 구체적으로 설명할 필요가 있습니다.',
+    followUps: [
+      {
+        question: '디자인 프로세스 중 가장 중요하다고 생각하는 단계는 무엇인가요?',
+        answer: { answer: '없습니다.' },
+      },
+      {
+        question: '프로세스를 진행하면서 가장 어려웠던 점은 무엇이었나요?',
+        answer: { answer: '없습니다.' },
+      },
+    ],
+  },
+  {
+    question: '어려웠던 디자인 프로젝트와 그 극복 과정은 무엇인가요?',
+    answer: { answer: '없습니다.' },
+    feedback:
+      '답변이 매우 부족합니다. 지원자는 어려웠던 실제 디자인 프로젝트 사례를 제시하고, 그 프로젝트에서 경험한 구체적인 어려움과 극복 과정, 배운 교훈을 상세히 설명해야 합니다. 단순히 "없습니다"라고 답변하는 것은 문제 해결 능력과 디자인 경험을 보여주지 못합니다. 지원자는 자신의 디자인 역량을 보여줄 수 있는 실제 사례를 준비해야 하며, 그 과정에서 배운 점을 명확히 언급해야 합니다.',
+    followUps: [
+      {
+        question: '그 프로젝트에서 어떤 어려움이 있었나요?',
+        answer: { answer: '없습니다.' },
+      },
+      {
+        question: '극복하는 과정에서 어떤 교훈을 얻었나요?',
+        answer: { answer: '없습니다.' },
+      },
+    ],
+  },
+  {
+    question: '디자인 트렌드를 어떻게 파악하고 반영하나요?',
+    answer: { answer: '반영하지 않습니다.' },
+    feedback:
+      '면접자의 응답은 디자인 트렌드와 고객 니즈를 무시하고 있습니다. 이는 디자이너로서 바람직하지 않은 태도입니다. 디자인은 고객의 요구사항과 트렌드를 반영하여 최선의 결과물을 만들어내는 것이 중요합니다. 디자이너 개인의 스타일만을 고집하는 것은 고객 만족도를 떨어뜨릴 수 있습니다. 디자이너는 열린 자세로 트렌드를 수용하고 고객의 니즈를 이해하려는 노력이 필요합니다. 또한 자신만의 독창성을 발휘하여 트렌드와 고객 니즈를 균형있게 반영한 디자인을 제시해야 합니다.',
+    followUps: [
+      {
+        question: '어떤 디자인 트렌드가 가장 영향력 있다고 생각하시나요?',
+        answer: { answer: '제가 만든 디자인이 가장 영향력이 있습니다.' },
+      },
+      {
+        question: '디자인 트렌드를 반영할 때 고객의 니즈와 어떻게 균형을 맞추시나요?',
+        answer: { answer: '저만의 길을 따라갑니다.' },
+      },
+    ],
+  },
+  {
+    question: '디자인 의사소통을 위해 어떤 노력을 하나요?',
+    answer: { answer: '의사소통하지 않습니다.' },
+    feedback:
+      '디자인 의사소통에 대한 지원자의 대답은 상당히 부족합니다. 의사소통의 중요성과 어려움에 대한 인식이 부족해 보입니다. 좋은 디자인 의사소통을 위해서는 효과적인 도구와 프로세스뿐만 아니라 팀원 간의 이해와 소통 능력이 중요합니다. 디자인 의사소통의 어려움으로는 시각적 요소와 개념을 명확히 전달하는 것, 다양한 배경을 가진 이해관계자들의 요구를 조율하는 것 등이 있습니다. 지원자는 디자인 의사소통의 본질과 중요성에 대한 이해가 부족한 것으로 보입니다.',
+    followUps: [
+      {
+        question: '디자인 의사소통을 위해 어떤 도구나 기술을 활용하시나요?',
+        answer: { answer: '노션을 사용하고 있습니다.' },
+      },
+      {
+        question: '디자인 의사소통 시 가장 어려운 점은 무엇인가요?',
+        answer: { answer: '없습니다.' },
+      },
+    ],
+  },
+  {
+    question: '디자인 분야에서 가장 큰 영감을 얻는 곳은 어디인가요?',
+    answer: { answer: '없습니다.' },
+    feedback:
+      '응답이 매우 부정적이고 비생산적입니다. 디자인 영감을 얻는 과정에 대해 열정적으로 대화하지 않고 단호하게 거부하는 태도는 바람직하지 않습니다. 디자이너로서 영감을 얻는 활동과 과정을 공유하고, 어려운 점이 있다면 극복 방안을 제시하는 것이 좋습니다. 면접관의 질문에 열린 자세로 임하고 긍정적인 태도를 보이는 것이 중요합니다.',
+    followUps: [
+      {
+        question: '디자인 분야에서 영감을 얻기 위해 어떤 활동을 하시나요?',
+        answer: { answer: '안합니다.' },
+      },
+      {
+        question: '디자인 영감을 얻는 과정에서 어려운 점은 무엇인가요?',
+        answer: { answer: '없습니다.' },
+      },
+    ],
+  },
+]
+
+const finalReport =
+  '이 지원자의 답변은 매우 부족합니다. 디자인 프로세스나 방법론에 대한 이해가 전혀 없으며, 어려웠던 프로젝트 경험이나 극복 과정, 디자인 트렌드 반영 방식 등 실무 경험을 보여주지 못했습니다. 또한 디자인 의사소통 노력이나 도구 활용, 영감을 얻는 방법에 대해서도 무성의한 답변을 했습니다. 전반적으로 디자이너로서의 자질이나 열정, 실력을 엿볼 수 없는 수준으로, 이 지원자에 대해서는 부적격 평가를 내리겠습니다.'
 
 export default function ReportPage() {
-  // Mock data for the report
-  const overallScore = "A"
-  const categories = [
-    {
-      name: "내용 전달력",
-      score: "A",
-      feedback:
-        "질문의 핵심을 정확히 파악하고 논리적으로 답변했습니다. 특히 프로젝트 경험을 설명할 때 STAR 기법을 잘 활용했습니다.",
-    },
-    {
-      name: "논리성",
-      score: "B+",
-      feedback:
-        "전반적으로 논리적인 구조를 갖추었으나, 일부 답변에서 주제 간 연결이 부족했습니다. 특히 직무 역량 관련 질문에서 더 구체적인 예시가 필요했습니다.",
-    },
-    {
-      name: "태도",
-      score: "A+",
-      feedback:
-        "면접 내내 적절한 자세와 시선 처리를 유지했습니다. 자신감 있는 목소리 톤과 밝은 표정이 인상적이었습니다.",
-    },
-    {
-      name: "전문성",
-      score: "A-",
-      feedback: "직무 관련 지식을 충분히 보여주었으나, 일부 기술적 질문에서 더 깊이 있는 답변이 필요했습니다.",
-    },
-  ]
-
-  const goodPoints = [
-    "자기소개서와 일관된 답변으로 신뢰감을 주었습니다.",
-    "구체적인 경험과 수치를 활용한 답변이 설득력 있었습니다.",
-    "어려운 질문에도 침착하게 대응했습니다.",
-  ]
-
-  const improvementPoints = [
-    "일부 답변이 너무 길었습니다. 핵심을 더 간결하게 전달하면 좋겠습니다.",
-    "기술적 역량을 보여주는 구체적인 사례가 더 필요합니다.",
-    "가끔 불필요한 간투어(음..., 그...)를 사용했습니다.",
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/workspace/interviews"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> 내 면접으로 돌아가기
-          </Link>
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">면접 결과 리포트</h1>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="flex items-center">
-                <Download className="h-4 w-4 mr-1" /> PDF 저장
-              </Button>
-              <Button variant="outline" size="sm" className="flex items-center">
-                <Share2 className="h-4 w-4 mr-1" /> 공유
-              </Button>
-            </div>
+        {/* 최종 평가 */}
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8 text-center">
+          <div className="flex flex-col items-center mb-2">
+            <CheckCircle className="h-8 w-8 text-[#8FD694] mb-2" />
+            <h2 className="text-2xl font-bold mb-2">최종 평가</h2>
           </div>
-          <p className="text-gray-600 mt-2">2023년 5월 16일 진행된 모의 면접 결과입니다.</p>
+          <p className="text-gray-700 text-base leading-relaxed max-w-2xl mx-auto">{finalReport}</p>
         </div>
 
-        {/* Overall Score */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 text-center">
-          <div className="inline-flex flex-col items-center">
-            <div className="text-6xl font-bold text-[#8FD694] mb-2">{overallScore}</div>
-            <div className="text-gray-600">종합 평가</div>
-          </div>
-          <p className="mt-4 text-gray-700 max-w-2xl mx-auto">
-            전반적으로 우수한 면접 수행을 보여주셨습니다. 특히 자기소개서와 일관된 답변과 구체적인 경험 사례가
-            돋보였습니다. 일부 개선이 필요한 부분이 있으나, 충분히 경쟁력 있는 면접 역량을 갖추고 있습니다.
-          </p>
-        </div>
-
-        {/* Category Feedback */}
+        {/* 질문별 피드백 */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-4">카테고리별 피드백</h2>
-          <div className="space-y-4">
-            {categories.map((category, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium text-lg flex items-center">
-                    <BarChart className="h-5 w-5 text-[#8FD694] mr-2" />
-                    {category.name}
-                  </h3>
-                  <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      category.score.startsWith("A+")
-                        ? "bg-purple-100 text-purple-800"
-                        : category.score.startsWith("A")
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {category.score}
-                  </div>
+          <h2 className="text-xl font-semibold mb-4">질문별 피드백</h2>
+          <div className="space-y-6">
+            {qaFlow.map((qa, idx) => (
+              <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center mb-2">
+                  <MessageSquareQuote className="h-5 w-5 text-[#8FD694] mr-2" />
+                  <span className="font-medium text-lg text-gray-900">Q{idx + 1}. {qa.question}</span>
                 </div>
-                <p className="text-gray-700">{category.feedback}</p>
+                <div className="ml-7 mb-1 text-gray-700">
+                  <span className="font-semibold">답변:</span> {qa.answer.answer}
+                </div>
+                {qa.followUps && qa.followUps.length > 0 && (
+                  <div className="ml-7 mb-2 space-y-1">
+                    {qa.followUps.map((fu, fidx) => (
+                      <div key={fidx} className="pl-4 border-l-2 border-[#8FD694] text-gray-600 text-sm">
+                        <span className="font-semibold">└ 추가질문:</span> {fu.question}<br />
+                        <span className="font-semibold">└ 답변:</span> {fu.answer.answer}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="ml-7 mt-2 text-gray-500 text-sm">
+                  <span className="font-semibold">피드백:</span> {qa.feedback}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Good Points & Improvements */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Good Points */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h3 className="font-medium text-lg flex items-center mb-4">
-              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-              잘한 점
-            </h3>
-            <ul className="space-y-3">
-              {goodPoints.map((point, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5 mr-2 flex-shrink-0">
-                    <CheckCircle className="h-3 w-3 text-green-500" />
-                  </div>
-                  <span className="text-gray-700">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Improvements */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h3 className="font-medium text-lg flex items-center mb-4">
-              <XCircle className="h-5 w-5 text-red-500 mr-2" />
-              개선할 점
-            </h3>
-            <ul className="space-y-3">
-              {improvementPoints.map((point, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-2 flex-shrink-0">
-                    <XCircle className="h-3 w-3 text-red-500" />
-                  </div>
-                  <span className="text-gray-700">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Question-by-Question */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">질문별 분석</h2>
-          <p className="text-gray-600 mb-4">각 질문에 대한 상세 피드백과 점수를 확인하세요.</p>
-          <div className="space-y-4">
-            {[1, 2, 3].map((questionNum) => (
-              <div
-                key={questionNum}
-                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">질문 {questionNum}</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-[#8FD694] hover:text-[#7ac47f] hover:bg-[#8FD694]/10"
-                  >
-                    <Play className="h-4 w-4 mr-1" /> 답변 듣기
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {questionNum === 1
-                    ? "자기소개서에 언급하신 프로젝트에서 가장 어려웠던 점과 어떻게 해결했는지 설명해주세요."
-                    : questionNum === 2
-                      ? "팀 프로젝트에서 갈등이 있었을 때 어떻게 해결했는지 구체적인 사례를 들어 설명해주세요."
-                      : "지원하신 직무에 필요한 역량이 무엇이라고 생각하시나요?"}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-4">
-            <Button variant="outline">모든 질문 보기 (총 5개)</Button>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => (window.location.href = "/workspace/interviews")}>
-            내 면접으로 돌아가기
-          </Button>
-          <Button
-            className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-            onClick={() => (window.location.href = "/workspace/interview/start")}
-          >
-            새 면접 시작하기
-          </Button>
         </div>
       </div>
     </div>
