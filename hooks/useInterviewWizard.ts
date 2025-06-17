@@ -77,60 +77,97 @@ export function useInterviewWizard() {
   };
 
   /* 네비게이션 */
-  const next = () => {
+  const prev = () => (step > 1 ? setStep(step - 1) : undefined);
+
+  /**
+   * 다음 단계로 이동하거나, 마지막 단계에서는 면접 생성 및 분기까지 모두 처리
+   * @param memberId 로그인된 사용자 ID (필수)
+   * @param router next/navigation의 router 인스턴스 (필수)
+   */
+  const next = async (memberId?: string, router?: any) => {
     const ok = validate();
-    console.log("🧪 validate", step, ok, form); // ← 추가
     if (!ok) return;
-    if (step < totalSteps) setStep(step + 1);
-    else {
-      // 🔥 최종 제출: InterviewCreateDTO 변환 및 예외 로깅
-      try {
-        if (!form.resumeId || !form.coverLetterId)
-          throw new Error("이력서/자기소개서가 선택되지 않았습니다.");
-        const payload: InterviewCreateDTO = {
-          name: form.title,
-          description: form.description,
-          corporateName: form.company,
-          jobName: form.position,
-          interviewFormat:
-            form.interviewType === "individual" ? "INDIVIDUAL" : "GROUP",
-          interviewType:
-            form.interviewStyle === "personality" ? "PERSONALITY" : "TECHNICAL",
-          voiceType: (
-            form.voiceType || ""
-          ).toUpperCase() as InterviewCreateDTO["voiceType"],
-          questionNumber: form.questionCount,
-          answerTime: form.answerDuration,
-          startType: form.startType === "now" ? "NOW" : "SCHEDULED",
-          scheduledDate: convertDate(
-            form.scheduledDate?.toLocaleDateString() || ""
-          ),
-          scheduledTime: form.scheduledTime,
-          maxParticipants: form.maxParticipants
-            ? Number(form.maxParticipants)
-            : undefined,
-          isOpen: form.visibility === "public",
-          resumeId: Number(form.resumeId),
-          resumeTitle: form.resumeTitle,
-          coverLetterId: Number(form.coverLetterId),
-          coverLetterTitle: form.coverLetterTitle,
-          inviteEmailDTOList:
-            form.inviteEmails
-              ?.filter((e) => e.email)
-              .map((e) => ({ email: e.email })) || [],
-        };
-        console.log("[면접 생성 payload]", payload);
-        submitMu.mutate(payload);
-      } catch (err) {
-        alert(
-          "면접 생성 데이터 변환 중 오류가 발생했습니다. 콘솔을 확인해주세요."
-        );
-        console.error("[면접 생성 변환 에러]", err, form);
+
+    if (step < totalSteps) {
+      setStep(step + 1);
+      return;
+    }
+
+    // 최종 제출 단계
+    if (!memberId) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+    if (!router) {
+      alert("라우터가 필요합니다.");
+      return;
+    }
+    try {
+      setForm((prev) => ({ ...prev, submitting: true }));
+      const payload: InterviewCreateDTO = {
+        name: form.title,
+        description: form.description,
+        corporateName: form.company,
+        jobName: form.position,
+        interviewFormat:
+          form.interviewType === "individual" ? "INDIVIDUAL" : "GROUP",
+        interviewType:
+          form.interviewStyle === "personality" ? "PERSONALITY" : "TECHNICAL",
+        voiceType: (
+          form.voiceType || ""
+        ).toUpperCase() as InterviewCreateDTO["voiceType"],
+        questionNumber: form.questionCount,
+        answerTime: form.answerDuration,
+        startType: form.startType === "now" ? "NOW" : "SCHEDULED",
+        scheduledDate: convertDate(
+          form.scheduledDate?.toLocaleDateString() || ""
+        ),
+        scheduledTime: form.scheduledTime,
+        maxParticipants: form.maxParticipants
+          ? Number(form.maxParticipants)
+          : undefined,
+        isOpen: form.visibility === "public",
+        resumeId: Number(form.resumeId),
+        resumeTitle: form.resumeTitle,
+        coverLetterId: Number(form.coverLetterId),
+        coverLetterTitle: form.coverLetterTitle,
+        inviteEmailDTOList:
+          form.inviteEmails
+            ?.filter((e) => e.email)
+            .map((e) => ({ email: e.email })) || [],
+      };
+      const interviewRes = await createInterview(payload);
+      const interviewId = interviewRes?.result?.interviewId;
+      const interviewFormat =
+        form.interviewType === "individual" ? "INDIVIDUAL" : "GROUP";
+      const startType = form.startType === "now" ? "NOW" : "SCHEDULED";
+      if (
+        interviewFormat === "INDIVIDUAL" &&
+        startType === "NOW" &&
+        interviewId
+      ) {
+        // 바로 참여 신청
+        // createMemberInterview는 외부에서 import 필요
+        // memberId, resumeId, coverLetterId 모두 number로 변환
+        if (typeof window !== "undefined") {
+          const { createMemberInterview } = await import("@/api/interview");
+          await createMemberInterview(interviewId, {
+            memberId: Number(memberId),
+            resumeId: Number(form.resumeId),
+            coverletterId: Number(form.coverLetterId),
+          });
+        }
+        router.push(`/workspace/interview/session/${interviewId}`);
+        return;
       }
+      alert("면접 생성이 완료되었습니다.");
+      router.push("/workspace/interviews");
+    } catch (e) {
+      alert("면접 생성 중 오류가 발생했습니다.");
+    } finally {
+      setForm((prev) => ({ ...prev, submitting: false }));
     }
   };
-
-  const prev = () => (step > 1 ? setStep(step - 1) : router.back());
 
   /* 공개 API */
   return {
@@ -140,6 +177,6 @@ export function useInterviewWizard() {
     totalSteps,
     next,
     prev,
-    submitting: submitMu.isPending,
+    submitting: form.submitting,
   };
 }

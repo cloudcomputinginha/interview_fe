@@ -63,43 +63,6 @@ export default function InterviewStartPage() {
     setCoverLetters,
   }
 
-  const handleNext = async () => {
-    if (wiz.step < wiz.totalSteps) {
-      wiz.next()
-      return
-    }
-    // 최종 제출 단계
-    if (!memberId) {
-      alert('로그인이 필요합니다.')
-      return
-    }
-    try {
-      wiz.setForm((prev) => ({ ...prev, submitting: true }))
-      const interviewRes = await createInterview(wiz.form)
-      const interviewId = interviewRes?.result?.interviewId
-      const interviewFormat = wiz.form.interviewType === 'individual' ? 'INDIVIDUAL' : 'GROUP'
-      const startType = wiz.form.startType === 'now' ? 'NOW' : 'SCHEDULED'
-      if (interviewFormat === 'INDIVIDUAL' && startType === 'NOW' && interviewId) {
-        // 바로 참여 신청
-        const memberRes = await createMemberInterview(interviewId, {
-          memberId,
-          resumeId: Number(wiz.form.resumeId),
-          coverletterId: Number(wiz.form.coverLetterId),
-        })
-        // 세션 페이지로 이동
-        router.push(`/workspace/interview/session/${interviewId}`)
-        return
-      }
-      // 기존 로직 (예: 그룹/예약 면접 등)
-      alert('면접 생성이 완료되었습니다.')
-      router.push('/workspace/interviews')
-    } catch (e) {
-      alert('면접 생성 중 오류가 발생했습니다.')
-    } finally {
-      wiz.setForm((prev) => ({ ...prev, submitting: false }))
-    }
-  }
-
   return (
     <>
       <HeaderWithNotifications />
@@ -130,7 +93,7 @@ export default function InterviewStartPage() {
             </Button>
             <Button
               disabled={wiz.submitting}
-              onClick={handleNext}
+              onClick={() => wiz.next(memberId ? String(memberId) : undefined, router)}
               className="bg-[#8FD694] hover:bg-[#7ac47f] text-white flex items-center gap-2"
             >
               {wiz.submitting
