@@ -9,8 +9,9 @@ import {
   generateFeedback,
   generateFinalReport,
 } from "@/api/ai-interview";
-import { getInterviewDetail } from "@/api/interview";
+import { getInterviewDetail, getMyInterviewList } from "@/api/interview";
 import { useQuery } from "@tanstack/react-query";
+import { useMemberSession } from "@/components/member-session-context";
 
 const S3_URL = process.env.NEXT_PUBLIC_S3_URL || "";
 
@@ -102,11 +103,12 @@ export function useInterviewSession(
   const [finalReport, setFinalReport] = useState<any>(null);
   const [timer, setTimer] = useState<number>(120);
 
+  const { memberId } = useMemberSession();
+
   const { data: interviewDetail, isLoading: interviewDetailLoading } = useQuery(
     {
       queryKey: ["interviewDetail", interviewId],
       queryFn: () => getInterviewDetail(Number(interviewId)),
-      select: (data: any) => data.result,
       enabled: !!interviewId,
     }
   );
@@ -122,6 +124,17 @@ export function useInterviewSession(
         setIsLoading(false);
         setError("면접 정보를 불러오지 못했습니다.");
         setProgressMessage("");
+        alert("면접 정보를 불러오지 못했습니다.");
+        return;
+      }
+
+      const memberInterviewId =
+        interviewDetail.result?.participants?.[0]?.memberInterviewId;
+
+      if (!memberInterviewId) {
+        setIsLoading(false);
+        setError("면접 정보를 불러오지 못했습니다.");
+        setProgressMessage("");
         return;
       }
       setIsLoading(true);
@@ -132,9 +145,10 @@ export function useInterviewSession(
           const result = await getSessionById(session.sessionId);
           loadedSession = result;
         } else {
+          console.log(interviewDetail);
           const result = await generateQuestions(
             interviewId,
-            interviewDetail.participants[0].memberInterviewId,
+            String(memberInterviewId),
             interviewDetail
           );
           loadedSession = typeof result === "boolean" ? null : result;
@@ -163,6 +177,9 @@ export function useInterviewSession(
       } catch (e) {
         setError("세션 정보를 불러오지 못했습니다.");
         setProgressMessage("");
+        alert(
+          "세션 생성 중 에러: " + (e instanceof Error ? e.message : String(e))
+        );
       }
     }
     init();

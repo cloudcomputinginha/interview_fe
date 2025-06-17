@@ -5,7 +5,8 @@ import { CheckCircle, MessageSquareQuote, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { terminateInterview } from '@/api/interview'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { aiFetch } from '@/utils/fetch/fetch'
 
 const result = {
     "interviewId": "1",
@@ -133,17 +134,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
     const router = useRouter();
 
-    // const { data: interviewData, isError, error } = useQuery({
-    //     queryKey: ['interview', sessionId],
-    //     queryFn: () => aiFetch.get(`/interview/session/${sessionId}`),
-    //     enabled: !!sessionId,
-    //     onError: (error: any) => {
-    //         if (error.response.status === 404) {
-    //             alert("면접 세션을 찾을 수 없습니다.")
-    //             router.replace("/workspace/interviews")
-    //         }
-    //     }
-    // })
+    const { data: result, isError, error } = useQuery({
+        queryKey: ['interview', sessionId],
+        queryFn: () => aiFetch.get(`/interview/session/${sessionId}`),
+        enabled: !!sessionId,
+    })
+
+    if (isError) {
+        alert("면접 세션을 찾을 수 없습니다.")
+        router.replace("/workspace/interviews")
+    }
 
     const { mutateAsync: endInterview } = useMutation({
         mutationFn: () => terminateInterview(Number(interviewId), {

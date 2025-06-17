@@ -193,9 +193,12 @@ function InterviewSessionContent(
     stopAnswering,
   } = useInterviewRealtime()
 
-  // 최종 리포트 다이얼로그 상태
-  const [open, setOpen] = useState(!!finalReport)
-  useEffect(() => { setOpen(!!finalReport) }, [finalReport])
+  useEffect(() => {
+    if (finalReport) {
+      alert('면접이 종료되었습니다. 면접 결과를 확인해주세요.')
+      window.location.href = '/workspace/interview/report/' + 0 + '_' + 0 + '_' + sessionCtx.session?.sessionId;
+    }
+  }, [finalReport])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [answerText, setAnswerText] = useState('')
@@ -510,7 +513,7 @@ function InterviewSessionContent(
           </div>
         </div>
       </div>
-      {/* 3. 최종 리포트 다이얼로그 */}
+      {/* 3. 최종 리포트 다이얼로그
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>최종 면접 리포트</DialogHeader>
@@ -523,7 +526,7 @@ function InterviewSessionContent(
             }}>닫기</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   )
 }
