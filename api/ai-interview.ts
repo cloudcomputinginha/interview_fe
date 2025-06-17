@@ -1,5 +1,9 @@
 import { aiFetch } from "../utils/fetch/fetch";
-import type { InterviewSession, QA } from "./types/interview-types";
+import type {
+  InterviewSession,
+  QA,
+  InterviewStartResponseDTO,
+} from "./types/interview-types";
 
 function toCamelCaseQA(raw: any): QA {
   return {
@@ -33,7 +37,7 @@ function toCamelCaseInterviewSession(raw: any): InterviewSession {
 export async function generateQuestions(
   interviewId: string,
   memberInterviewId: string,
-  payload?: any
+  payload?: InterviewStartResponseDTO
 ): Promise<InterviewSession | boolean> {
   const res = await aiFetch.post<any>(
     `/interview/${interviewId}/${memberInterviewId}/generate_questions`,

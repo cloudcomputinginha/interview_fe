@@ -1,22 +1,22 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { X, AlertCircle, Loader2 } from "lucide-react"
-import { useInterviewSession } from './hooks/use-interview-session'
-import { generateMockSessionId } from "@/utils/session/generateMockSessionId"
+import { useInterviewSession } from '../hooks/use-interview-session'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AIInterviewSocket } from '@/api/ai-interview-socket'
-import { RealtimeProvider } from './hooks/use-interview-realtime'
-import { useInterviewRealtime } from './hooks/use-interview-realtime'
+import { RealtimeProvider } from '../hooks/use-interview-realtime'
+import { useInterviewRealtime } from '../hooks/use-interview-realtime'
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from '@/components/ui/dialog'
 import { WebcamView } from './webcam-view'
 
 
-export default function InterviewSessionPage() {
+export default function InterviewSessionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: interviewId } = use(params) as { id: string }
 
-  const sessionCtx = useInterviewSession('2', generateMockSessionId())
+  const sessionCtx = useInterviewSession(interviewId)
 
   const wsRef = useRef<AIInterviewSocket | null>(null)
 
@@ -54,6 +54,7 @@ export default function InterviewSessionPage() {
           if (!sessionCtx.session) throw new Error('session is not found')
           wsRef.current.connect(
             sessionCtx.session.sessionId,
+            sessionCtx.session.memberInterviewId,
             sessionCtx.currentQuestionIdx,
             sessionCtx.currentFollowUpIdx
           )

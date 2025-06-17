@@ -112,3 +112,9 @@ export async function updateInterview(
 ) {
   return serverFetch.put(`/interviews/${interviewId}`, data);
 }
+
+export async function getInterviewDetail(interviewId: number) {
+  return serverFetch.get<ApiResponseInterviewStartResponseDTO>(
+    `/interviews/${interviewId}/start`
+  );
+}

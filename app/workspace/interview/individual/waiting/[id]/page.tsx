@@ -14,12 +14,12 @@ import { formatCountdownString } from "@/utils/date/convertAllDate"
 
 export default function IndividualInterviewWaitingRoomPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: interviewId } = use(params) as { id: string }
-    const { memberId } = useMemberSession()
+    const { memberId } = useMemberSession();
     const [countdown, setCountdown] = useState<{ minutes: number; seconds: number }>({ minutes: 5, seconds: 0 })
     const [isStarting, setIsStarting] = useState(false)
     const [progressValue, setProgressValue] = useState(0)
     const timerRef = useRef<NodeJS.Timeout | null>(null)
-    const router = useRouter()
+    const router = useRouter();
 
     // 임시: getGroupInterviewDetail 재사용 (실제 API 분리 필요)
     const { data: interview } = useQuery({
@@ -67,7 +67,7 @@ export default function IndividualInterviewWaitingRoomPage({ params }: { params:
         if (confirm("면접을 바로 시작하시겠습니까?")) {
             setIsStarting(true)
             setTimeout(() => {
-                window.location.href = "/workspace/interview/session"
+                window.location.href = `/workspace/interview/session/${interviewId}`
             }, 2000)
         }
     }

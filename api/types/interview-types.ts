@@ -233,12 +233,23 @@ export interface InterviewOptionDTO {
 export interface ParticipantDTO {
   memberInterviewId?: number;
   resumeDTO?: ResumeSimpleDTO;
-  coverLetterDTO?: any; // CoverletterDetailDTO 등 실제 타입에 맞게 수정 필요
+  coverLetterDTO?: CoverLetterDetailDTO;
 }
 
 export interface ResumeSimpleDTO {
   resumeId?: number;
   fileUrl?: string;
+}
+
+export interface CoverLetterDetailDTO {
+  coverletterId: number;
+  corporateName: string;
+  jobName: string;
+  qnaList: {
+    question: string;
+    answer: string;
+  }[];
+  createdAt: string;
 }
 
 // === AI 인터뷰 세션 관련 타입 (FastAPI 기반) ===

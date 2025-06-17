@@ -9,6 +9,8 @@ import {
   generateFeedback,
   generateFinalReport,
 } from "@/api/ai-interview";
+import { getInterviewDetail } from "@/api/interview";
+import { useQuery } from "@tanstack/react-query";
 
 const S3_URL = process.env.NEXT_PUBLIC_S3_URL || "";
 
@@ -83,8 +85,7 @@ interface UseInterviewSessionResult {
 }
 
 export function useInterviewSession(
-  interviewId: string,
-  memberInterviewId: string
+  interviewId: string
 ): UseInterviewSessionResult {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [qaFlow, setQaFlow] = useState<QA[]>([]);
@@ -101,8 +102,28 @@ export function useInterviewSession(
   const [finalReport, setFinalReport] = useState<any>(null);
   const [timer, setTimer] = useState<number>(120);
 
+  const { data: interviewDetail, isLoading: interviewDetailLoading } = useQuery(
+    {
+      queryKey: ["interviewDetail", interviewId],
+      queryFn: () => getInterviewDetail(Number(interviewId)),
+      select: (data: any) => data.result,
+      enabled: !!interviewId,
+    }
+  );
+
   useEffect(() => {
     async function init() {
+      if (interviewDetailLoading) {
+        setIsLoading(true);
+        setProgressMessage("면접 정보를 불러오는 중입니다...");
+        return;
+      }
+      if (!interviewDetail) {
+        setIsLoading(false);
+        setError("면접 정보를 불러오지 못했습니다.");
+        setProgressMessage("");
+        return;
+      }
       setIsLoading(true);
       setProgressMessage("면접 세션을 생성하고 있어요...");
       try {
@@ -113,7 +134,8 @@ export function useInterviewSession(
         } else {
           const result = await generateQuestions(
             interviewId,
-            memberInterviewId
+            interviewDetail.participants[0].memberInterviewId,
+            interviewDetail
           );
           loadedSession = typeof result === "boolean" ? null : result;
         }
@@ -144,7 +166,7 @@ export function useInterviewSession(
       }
     }
     init();
-  }, []);
+  }, [interviewDetail, interviewDetailLoading]);
 
   const handleMainAnswerSubmit = useCallback(
     async (answer: string, isText = false) => {
