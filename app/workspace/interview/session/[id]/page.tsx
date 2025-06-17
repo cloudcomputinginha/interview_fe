@@ -36,7 +36,8 @@ export default function InterviewSessionPage({ params }: { params: Promise<{ id:
         sessionCtx.session.interviewId,
         sessionCtx.session.memberInterviewId,
         sessionCtx.currentQuestionIdx,
-        sessionCtx.currentFollowUpIdx
+        sessionCtx.currentFollowUpIdx,
+        sessionCtx.session.sessionId
       )
     }
   }, [isStarted, sessionCtx.session?.sessionId, sessionCtx.currentQuestionIdx, sessionCtx.currentFollowUpIdx])
@@ -53,10 +54,11 @@ export default function InterviewSessionPage({ params }: { params: Promise<{ id:
         try {
           if (!sessionCtx.session) throw new Error('session is not found')
           wsRef.current.connect(
-            sessionCtx.session.sessionId,
+            sessionCtx.session.interviewId,
             sessionCtx.session.memberInterviewId,
             sessionCtx.currentQuestionIdx,
-            sessionCtx.currentFollowUpIdx
+            sessionCtx.currentFollowUpIdx,
+            sessionCtx.session.sessionId
           )
           resolve(true)
         } catch (e) {

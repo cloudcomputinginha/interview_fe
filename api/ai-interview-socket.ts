@@ -13,13 +13,14 @@ export class AIInterviewSocket {
     interviewId: string,
     memberInterviewId: string,
     qIndex: number,
-    fIndex: number
+    fIndex: number,
+    sessionId: string
   ) {
     if (this.socket) return;
     const baseUrl = process.env.NEXT_PUBLIC_AI_WEBSOCKET_URL;
     if (!baseUrl)
       throw new Error("NEXT_PUBLIC_AI_WEBSOCKET_URL 환경변수가 필요합니다.");
-    const url = `${baseUrl}?interview_id=${interviewId}&member_interview_id=${memberInterviewId}&index=${qIndex}&f_index=${fIndex}`;
+    const url = `${baseUrl}?interview_id=${interviewId}&member_interview_id=${memberInterviewId}&session_id=${sessionId}&index=${qIndex}&f_index=${fIndex}`;
     this.socket = new WebSocket(url);
     this.socket.onmessage = (event) => {
       if (this.handler) {
