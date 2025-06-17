@@ -21,7 +21,7 @@ function useSseNotifications() {
   useEffect(() => {
     const lastEventId = localStorage.getItem("lastEventId");
     const accessToken = localStorage.getItem("ACCESS_TOKEN");
-    const url = `${process.env.NEXT_PUBLIC_SERVER_URL}/notifications/subscribe`;
+    const url = `${process.env.NEXT_PUBLIC_SERVER_URL}/notifications/${process.env.NEXT_PUBLIC_SSE_SUBSCRIBE_PATH}`;
 
     console.log(lastEventId);
 

@@ -129,7 +129,6 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     // Param으로 넘겨줄 때 interviewId, memberInterviewId, sessionId 순으로 넘겨줌
 
     const { id: ids } = use(params);
-
     const [interviewId, memberInterviewId, sessionId] = ids.split("_");
 
     const router = useRouter();
