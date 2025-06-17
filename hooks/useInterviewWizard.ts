@@ -146,17 +146,6 @@ export function useInterviewWizard() {
         startType === "NOW" &&
         interviewId
       ) {
-        // 바로 참여 신청
-        // createMemberInterview는 외부에서 import 필요
-        // memberId, resumeId, coverLetterId 모두 number로 변환
-        if (typeof window !== "undefined") {
-          const { createMemberInterview } = await import("@/api/interview");
-          await createMemberInterview(interviewId, {
-            memberId: Number(memberId),
-            resumeId: Number(form.resumeId),
-            coverletterId: Number(form.coverLetterId),
-          });
-        }
         router.push(`/workspace/interview/session/${interviewId}`);
         return;
       }
