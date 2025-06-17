@@ -322,7 +322,10 @@ function CoverLetterDialog({ open, onOpenChange, memberId, onSuccess }: { open: 
                 <div className="py-4">
                     <CoverLetterForm
                         onSubmit={(data) => {
-                            createCoverletter(data).then(() => {
+                            createCoverletter({
+                                ...data,
+                                memberId,
+                            }).then(() => {
                                 onSuccess()
                                 alert('자기소개서가 성공적으로 등록되었습니다.')
                             }).catch(() => {
