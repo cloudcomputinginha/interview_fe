@@ -38,6 +38,7 @@ function useSseNotifications() {
     eventSource.onmessage = (event: MessageEvent) => {
       try {
         const rawData = event.data;
+        if (event.data === "ping") return;
         if (rawData.includes("EventStream created. ")) {
           setSseConnected(true);
         }
