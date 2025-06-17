@@ -14,7 +14,7 @@ export default function AuthRedirectPageInner() {
     const [error, setError] = useState<string | null>(null)
 
     const login = async () => {
-        const memberId = await serverFetch.get('/members').then(data => data.memberId)
+        const memberId = await serverFetch.get('/members').then(data => data.result.memberId)
         loginMember(memberId)
         router.replace('/workspace')
     }
