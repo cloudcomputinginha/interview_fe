@@ -5,12 +5,19 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemberSession } from '../../components/member-session-context'
 import { Button } from '@/components/ui/button'
 import { setAccessToken, setRefreshToken } from '@/utils/session/token-storage'
+import { serverFetch } from '@/utils/fetch/fetch'
 
 export default function AuthRedirectPageInner() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { login } = useMemberSession()
+    const { login: loginMember } = useMemberSession()
     const [error, setError] = useState<string | null>(null)
+
+    const login = async () => {
+        const memberId = await serverFetch.get('/members').then(data => data.memberId)
+        loginMember(memberId)
+        router.replace('/workspace')
+    }
 
     useEffect(() => {
         const accessToken = searchParams.get('at')
@@ -22,9 +29,9 @@ export default function AuthRedirectPageInner() {
         }
         setAccessToken(accessToken)
         setRefreshToken(refreshToken)
+
         if (accessToken && refreshToken) {
-            login(6)
-            router.replace('/workspace')
+            login()
         }
         return
         // 실제 서비스라면 at를 디코드하거나 백엔드에서 memberId를 받아야 함
