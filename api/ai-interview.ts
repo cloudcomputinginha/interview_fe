@@ -5,7 +5,7 @@ import type {
   InterviewStartResponseDTO,
 } from "./types/interview-types";
 
-function toCamelCaseQA(raw: any): QA {
+export function toCamelCaseQA(raw: any): QA {
   return {
     question: raw.question,
     audioPath: raw.audio_path,
