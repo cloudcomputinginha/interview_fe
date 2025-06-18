@@ -190,14 +190,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                                     <span className="font-medium text-lg text-gray-900">Q{idx + 1}. {qa.question}</span>
                                 </div>
                                 <div className="ml-7 mb-1 text-gray-700">
-                                    <span className="font-semibold">답변:</span> {JSON.parse(qa?.answer)?.answer}
+                                    <span className="font-semibold">답변:</span> {qa.answer}
                                 </div>
                                 {qa.follow_ups && qa.follow_ups?.length > 0 && (
                                     <div className="ml-7 mb-2 space-y-1">
                                         {qa.follow_ups?.map((fu, fidx) => (
                                             <div key={fidx} className="pl-4 border-l-2 border-[#8FD694] text-gray-600 text-sm">
                                                 <span className="font-semibold">└ 추가질문:</span> {fu?.question}<br />
-                                                <span className="font-semibold">└ 답변:</span> {JSON.parse(fu?.answer)?.answer}
+                                                <span className="font-semibold">└ 답변:</span> {fu?.answer}
                                             </div>
                                         ))}
                                     </div>
