@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { User, Users } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import type { InterviewFormState } from "@/lib/interview/types"
+import { useState } from "react"
 
 const companies = [
     "삼성전자",
@@ -57,6 +58,8 @@ interface Props {
 export default function Step1({ form, setForm }: Props) {
     const set = (patch: Partial<InterviewFormState>) =>
         setForm((f) => ({ ...f, ...patch }))
+
+    const [noticeUrl, setNoticeUrl] = useState("")
 
     return (
         <div className="space-y-6">
@@ -108,6 +111,15 @@ export default function Step1({ form, setForm }: Props) {
                         />
                     )}
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label>채용 공고 링크</Label>
+                <Input
+                    value={noticeUrl}
+                    onChange={(e) => setNoticeUrl(e.target.value)}
+                    placeholder="예: https://recruit.hyundai.com/..."
+                />
             </div>
 
             {/* 면접 유형 */}
