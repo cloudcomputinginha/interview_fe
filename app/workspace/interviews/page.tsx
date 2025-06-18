@@ -231,7 +231,7 @@ export default function InterviewsPage() {
                     </div>
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="h-4 w-4 mr-1" />
-                      <span>{myInterviewCardDTO.startedAt}</span>
+                      <span>{formatDate(myInterviewCardDTO.startedAt)}</span>
                     </div>
                   </CardContent>
                   <CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">
