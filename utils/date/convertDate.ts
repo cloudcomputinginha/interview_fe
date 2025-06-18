@@ -5,7 +5,7 @@ export const convertDate = (raw: string | Date): string => {
 
   /** 2) KST(UTC+9)로 보정 */
   const KST_OFFSET = 9 * 60 * 60 * 1000; // 9h in ms
-  const kstDate = new Date(utcDate.getTime() + KST_OFFSET);
+  const kstDate = new Date(utcDate.getTime());
   const nowKst = new Date(Date.now() + KST_OFFSET);
 
   /** 3) 상대 시간 계산 (KST 기준) */
