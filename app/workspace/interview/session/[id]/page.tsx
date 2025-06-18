@@ -215,13 +215,12 @@ function InterviewSessionContent(
 
   // 버튼 활성화 조건
   const canSubmit =
-    timer <= 90 && (
-      (!!voiceAnswerText && voiceAnswerText.trim().length > 0) ||
-      (
-        (!voiceAnswerText || voiceAnswerText.trim().length === 0) &&
-        !!answerText && answerText.trim().length > 0
-      )
+    (!!voiceAnswerText && voiceAnswerText.trim().length > 0) ||
+    (
+      (!voiceAnswerText || voiceAnswerText.trim().length === 0) &&
+      !!answerText && answerText.trim().length > 0
     )
+
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -488,7 +487,7 @@ function InterviewSessionContent(
                     disabled={isSubmitting || isProcessing || !canSubmit || isFeedbackLoading || isQuestionLoading}
                   >
                     {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                    답변 제출 {timer > 90 && `${timer - 90}초 남았어요!`}
+                    답변 제출
                   </Button>
 
                 </>

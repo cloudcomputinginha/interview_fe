@@ -41,7 +41,14 @@ export async function generateQuestions(
 ): Promise<InterviewSession | boolean> {
   const res = await aiFetch.post<any>(
     `/interview/${interviewId}/${memberInterviewId}/generate_questions`,
-    payload
+    {
+      ...payload,
+      interview: {
+        ...payload?.interview,
+        notice_url:
+          "https://hanabank.incruit.com/hire/viewhire.asp?projectid=113",
+      },
+    }
   );
   if (typeof res === "boolean") return res;
   return toCamelCaseInterviewSession(res);
