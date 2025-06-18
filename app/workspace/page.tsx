@@ -40,10 +40,19 @@ export default function WorkspacePage() {
   const memberId = useRequireMemberId();
   const queryClient = useQueryClient();
 
-  const convertDateLocal = (date: string) => {
-    const dateObj = new Date(date);
-    return dateObj.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
-  };
+  // const convertDateLocal = (date: string) => {
+
+  //   const dateObj = new Date(date + "Z");
+
+  //   // 유효성 검사
+  //   if (isNaN(dateObj.getTime())) {
+  //     console.error("❌ Invalid date:", date);
+  //     return "잘못된 날짜";
+  //   }
+
+  //   // 한국 표준시로 변환
+  //   return dateObj.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+  // };
   // 자소서 & 이력서 목록 가져오기
   // TODO : 이력서 API 완성되면 가져오기
   const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery({
@@ -57,7 +66,7 @@ export default function WorkspacePage() {
         name: `${coverLetter.corporateName}-${coverLetter.jobName}`,
         corporateName: coverLetter.corporateName,
         jobName: coverLetter.jobName,
-        date: convertDateLocal(coverLetter.createdAt!),
+        date: coverLetter.createdAt!,
         size: "0KB",
         type: "manual",
       }))
@@ -95,7 +104,7 @@ export default function WorkspacePage() {
       return {
         id: resume.resumeId,
         name: resume.fileName,
-        date: detail?.updatedAt ? convertDateLocal(detail.updatedAt) : '-',
+        date: detail?.updatedAt ? detail.updatedAt : '-',
         size: resume.fileSize ? `${(resume.fileSize / 1024).toFixed(1)}KB` : '-',
         type: 'resume',
       }

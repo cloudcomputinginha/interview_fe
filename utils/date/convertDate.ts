@@ -1,24 +1,24 @@
-export const convertDate = (date: string) => {
-  const dateObj = new Date(date);
+export const convertDate = (raw: string | Date): string => {
+  /** 1) 파싱 및 유효성 검사 */
+  const utcDate = raw instanceof Date ? raw : new Date(raw);
+  if (isNaN(utcDate.getTime())) return ""; // 잘못된 입력이면 빈 문자열 반환
 
-  const year = dateObj.getFullYear();
-  const month = dateObj.getMonth() + 1;
-  const day = dateObj.getDate();
+  /** 2) KST(UTC+9)로 보정 */
+  const KST_OFFSET = 9 * 60 * 60 * 1000; // 9h in ms
+  const kstDate = new Date(utcDate.getTime() + KST_OFFSET);
+  const nowKst = new Date(Date.now() + KST_OFFSET);
 
-  // 현재 시간과 비교해서 오늘 날짜면 몇시간 전, 몇분 전, 몇초전 표시
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - dateObj.getTime());
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  const diffMinutes = Math.floor(diffTime / (1000 * 60));
-  const diffSeconds = Math.floor(diffTime / 1000);
+  /** 3) 상대 시간 계산 (KST 기준) */
+  const diffSec = Math.floor((nowKst.getTime() - kstDate.getTime()) / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
 
-  if (diffSeconds < 60) {
-    return `${diffSeconds}초 전`;
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes}분 전`;
-  } else if (diffHours < 24) {
-    return `${diffHours}시간 전`;
-  }
+  if (diffSec < 60) return `${diffSec}초 전`;
+  if (diffMin < 60) return `${diffMin}분 전`;
+  if (diffHr < 24) return `${diffHr}시간 전`;
 
-  return `${year}년 ${month}월 ${day}일`;
+  /** 4) 절대 날짜(YYYY년 M월 D일) */
+  return `${kstDate.getFullYear()}년 ${
+    kstDate.getMonth() + 1
+  }월 ${kstDate.getDate()}일`;
 };
