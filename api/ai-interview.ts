@@ -39,16 +39,20 @@ export async function generateQuestions(
   memberInterviewId: string,
   payload?: InterviewStartResponseDTO
 ): Promise<InterviewSession | boolean> {
-  const res = await aiFetch.post<any>(
-    `/interview/${interviewId}/${memberInterviewId}/generate_questions`,
-    {
-      ...payload,
+  const updatedPayload = {
+    ...payload,
+    result: {
+      ...payload.result,
       interview: {
-        ...payload?.interview,
+        ...payload.result.interview,
         notice_url:
           "https://hanabank.incruit.com/hire/viewhire.asp?projectid=113",
       },
-    }
+    },
+  };
+  const res = await aiFetch.post<any>(
+    `/interview/${interviewId}/${memberInterviewId}/generate_questions`,
+    updatedPayload
   );
   if (typeof res === "boolean") return res;
   return toCamelCaseInterviewSession(res);
