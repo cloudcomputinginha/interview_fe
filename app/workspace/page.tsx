@@ -42,6 +42,9 @@ export default function WorkspacePage() {
 
   const convertDateLocal = (date: string) => {
     const dateObj = new Date(date);
+    // 9시간 더하기
+    dateObj.setHours(dateObj.getHours() + 9);
+    console.log(dateObj.toLocaleDateString())
     return dateObj.toLocaleDateString();
   }
 
@@ -65,42 +68,43 @@ export default function WorkspacePage() {
     }
   })
 
-  // 이력서 리스트 가져오기
+  // 이력서 리스트 가져오기 (동기 select)
   const { data: resumeList, isLoading: resumeListLoading } = useQuery({
-    queryKey: ["resumeList", memberId],
+    queryKey: ['resumeList', memberId],
     queryFn: () => getResumeList(memberId!),
     enabled: !!memberId,
-    select: (data) => {
-      const resumes = data.result?.resumes
-      return resumes?.map((resume) => ({
-        id: resume.resumeId,
-        name: resume.fileName,
-        date: null, // 상세조회에서 가져올 수 있음
-        size: resume.fileSize ? `${(resume.fileSize / 1024).toFixed(1)}KB` : '-',
-        type: "resume",
-      }))
-    },
+    select: (data) => data.result?.resumes ?? [],
   })
 
+  // 이력서 상세정보 병렬 fetch
+  const resumeIds = (resumeList?.map(r => r.resumeId).filter((id): id is number => typeof id === 'number') ?? [])
+  const resumeDetailsQueries = useQueries({
+    queries: resumeIds.map(resumeId => ({
+      queryKey: ['resumeDetail', resumeId, memberId],
+      queryFn: () => getResumeDetail(resumeId, memberId!),
+      enabled: !!resumeId && !!memberId,
+      select: (res: any) => res.result,
+    })),
+  })
 
-  const getResumeDetailAndUpdatedAt = async (resumeId: number, memberId: number) => {
-    const res = await getResumeDetail(resumeId, memberId)
-    return {
-      ...res.result,
-      updatedAt: convertDateLocal(res.result?.updatedAt!),
-    }
-  }
-
-  useEffect(() => {
-    if (resumeList) {
-      queryClient.setQueryData(["resumeList", memberId], resumeList.map((resume) => getResumeDetailAndUpdatedAt(resume.id!, memberId!)))
-    }
-  }, [resumeList])
+  // 상세정보 매핑
+  const resumeDetailsMap = Object.fromEntries(
+    resumeIds.map((id, idx) => [id, resumeDetailsQueries[idx]?.data])
+  )
 
   // 문서 통합
   const allDocuments = [
-    ...(resumeList || []),
-    ...(coverLetterList || []),
+    ...(resumeList?.filter(resume => typeof resume.resumeId === 'number').map(resume => {
+      const detail = resumeDetailsMap[resume.resumeId as number] as { updatedAt?: string } | undefined
+      return {
+        id: resume.resumeId,
+        name: resume.fileName,
+        date: detail?.updatedAt ? convertDateLocal(detail.updatedAt) : '-',
+        size: resume.fileSize ? `${(resume.fileSize / 1024).toFixed(1)}KB` : '-',
+        type: 'resume',
+      }
+    }) ?? []),
+    ...(coverLetterList ?? []),
   ]
 
   // 기존 filteredDocuments를 allDocuments로 변경
