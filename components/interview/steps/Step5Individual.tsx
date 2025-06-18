@@ -4,6 +4,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { FileText, Upload, Brain, CalendarIcon, Clock, User } from "lucide-react"
 import type { InterviewFormState } from "@/lib/interview/types"
+import { useMemo } from "react";
 
 /**
  * 이 컴포넌트는 "개인 면접" 최종 확인 화면입니다.
@@ -27,6 +28,14 @@ interface Props {
 export default function Step5Individual({ form, resumes = [], coverLetters = [] }: Props) {
     const resumeObj = resumes.find((r) => r.id === form.resumeId)
     const coverLetterObj = coverLetters.find((c) => c.id === form.coverLetterId)
+
+    const voiceType = useMemo(() => {
+        if (form.voiceType.includes("female")) {
+            return "여성 " + form.voiceType.split("female")[1] + "대"
+        } else {
+            return "남성 " + form.voiceType.split("male")[1] + "대"
+        }
+    }, [form.voiceType])
 
     return (
         <div className="space-y-6">
@@ -81,7 +90,7 @@ export default function Step5Individual({ form, resumes = [], coverLetters = [] 
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-2 text-sm">
-                        <p>AI 음성: {form.voiceType}</p>
+                        <p>AI 음성: {voiceType}</p>
                         <p>스타일: {form.interviewStyle === "personality" ? "인성" : "기술"}</p>
                         <p>질문 수: {form.questionCount}</p>
                         <p>답변 시간: {form.answerDuration}분</p>
@@ -118,18 +127,6 @@ export default function Step5Individual({ form, resumes = [], coverLetters = [] 
                     </CardContent>
                 </Card>
             </div>
-
-            {/* JSON 프리뷰 */}
-            <Card className="border-2 border-dashed border-gray-300">
-                <CardHeader>
-                    <CardTitle className="text-sm text-gray-600">📤 API 전송 데이터 (개발자용)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <pre className="text-xs bg-gray-100 p-3 rounded overflow-x-auto whitespace-pre-wrap">
-                        {JSON.stringify(form, null, 2)}
-                    </pre>
-                </CardContent>
-            </Card>
         </div>
     )
 }

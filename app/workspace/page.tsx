@@ -38,7 +38,12 @@ export default function WorkspacePage() {
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
 
   const memberId = useRequireMemberId();
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+
+  const convertDateLocal = (date: string) => {
+    const dateObj = new Date(date);
+    return dateObj.toLocaleDateString();
+  }
 
   // 자소서 & 이력서 목록 가져오기
   // TODO : 이력서 API 완성되면 가져오기
@@ -53,7 +58,7 @@ export default function WorkspacePage() {
         name: `${coverLetter.corporateName}-${coverLetter.jobName}`,
         corporateName: coverLetter.corporateName,
         jobName: coverLetter.jobName,
-        date: coverLetter.createdAt,
+        date: convertDateLocal(coverLetter.createdAt!),
         size: "0KB",
         type: "manual",
       }))
@@ -76,6 +81,21 @@ export default function WorkspacePage() {
       }))
     },
   })
+
+
+  const getResumeDetailAndUpdatedAt = async (resumeId: number, memberId: number) => {
+    const res = await getResumeDetail(resumeId, memberId)
+    return {
+      ...res.result,
+      updatedAt: convertDateLocal(res.result?.updatedAt!),
+    }
+  }
+
+  useEffect(() => {
+    if (resumeList) {
+      queryClient.setQueryData(["resumeList", memberId], resumeList.map((resume) => getResumeDetailAndUpdatedAt(resume.id!, memberId!)))
+    }
+  }, [resumeList])
 
   // 문서 통합
   const allDocuments = [
