@@ -198,7 +198,7 @@ function InterviewSessionContent(
   useEffect(() => {
     if (finalReport) {
       alert('면접이 종료되었습니다. 면접 결과를 확인해주세요.')
-      window.location.href = '/workspace/interview/report/' + sessionCtx.session?.interviewId + '_' + sessionCtx.session?.memberInterviewId + '_' + sessionCtx.session?.sessionId;
+      window.location.href = '/workspace/interview/session/report/' + sessionCtx.session?.interviewId + '_' + sessionCtx.session?.memberInterviewId + '_' + sessionCtx.session?.sessionId;
     }
   }, [finalReport])
 
