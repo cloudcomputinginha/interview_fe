@@ -42,12 +42,8 @@ export default function WorkspacePage() {
 
   const convertDateLocal = (date: string) => {
     const dateObj = new Date(date);
-    // 9시간 더하기
-    dateObj.setHours(dateObj.getHours() + 9);
-    console.log(dateObj.toLocaleDateString())
-    return dateObj.toLocaleDateString();
-  }
-
+    return dateObj.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+  };
   // 자소서 & 이력서 목록 가져오기
   // TODO : 이력서 API 완성되면 가져오기
   const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery({
