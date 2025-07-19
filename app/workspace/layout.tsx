@@ -5,25 +5,24 @@ import { useRequireMemberId } from '@/components/member-session-context'
 import { usePathname } from 'next/navigation'
 
 const EXCLUDE_PATHS = [
-    '/workspace/interview/session',
-    '/login',
-    '/workspace/loading'
+	'/workspace/interviews/session',
+	'/login',
+	'/workspace/loading',
 ]
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
+	const { memberId } = useMemberSession()
 
-    const { memberId } = useMemberSession();
+	useRequireMemberId(EXCLUDE_PATHS)
+	const pathname = usePathname()
 
-    useRequireMemberId(EXCLUDE_PATHS)
-    const pathname = usePathname()
+	useEffect(() => {
+		if (!memberId && !EXCLUDE_PATHS.includes(pathname)) {
+			alert('로그인이 필요합니다.')
+		}
+	}, [memberId, pathname])
 
-    useEffect(() => {
-        if (!memberId && !EXCLUDE_PATHS.includes(pathname)) {
-            alert('로그인이 필요합니다.')
-        }
-    }, [memberId, pathname])
+	if (!memberId && !EXCLUDE_PATHS.includes(pathname)) return null
 
-    if (!memberId && !EXCLUDE_PATHS.includes(pathname)) return null
-
-    return <>{children}</>
-} 
+	return <>{children}</>
+}
