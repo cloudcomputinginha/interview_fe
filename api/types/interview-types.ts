@@ -317,3 +317,25 @@ export interface ApiResponseMyInterviewListDTO {
   message: string;
   result: MyInterviewListDTO;
 }
+
+// 면접 문서 변경 DTO
+export interface UpdateDocumentDTO {
+  resumeId: number;
+  coverletterId: number;
+}
+
+// 면접 문서 변경 응답 DTO
+export interface MemberInterviewDocumentDTO {
+  memberInterviewId?: number;
+  resumeId?: number;
+  coverLetterId?: number;
+  updatedAt?: string;
+}
+
+// 면접 문서 변경 응답 래퍼
+export interface ApiResponseMemberInterviewDocumentDTO {
+  isSuccess?: boolean;
+  code?: string;
+  message?: string;
+  result?: MemberInterviewDocumentDTO;
+}

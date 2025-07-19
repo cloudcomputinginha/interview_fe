@@ -1,12 +1,12 @@
 'use client'
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { serverFetch } from '@/utils/fetch/fetch'
+
+import { createContext, useContext, useState, ReactNode } from 'react'
+import { logout } from '@/api/auth'
 
 interface MemberSessionContextProps {
     memberId: number | null
     login: (id: number) => void
-    logout: () => void
+    logout: () => Promise<void>
 }
 
 const MemberSessionContext = createContext<MemberSessionContextProps | undefined>(undefined)
@@ -25,16 +25,21 @@ export function MemberSessionProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('memberId', String(id))
     }
 
-    const logout = async () => {
-        await serverFetch.del('/auth/logout')
-        setMemberId(null)
-        localStorage.removeItem('memberId')
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
+    const handleLogout = async () => {
+        try {
+            await logout()
+        } catch (error) {
+            console.error('로그아웃 실패:', error)
+        } finally {
+            setMemberId(null)
+            localStorage.removeItem('memberId')
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+        }
     }
 
     return (
-        <MemberSessionContext.Provider value={{ memberId, login, logout }}>
+        <MemberSessionContext.Provider value={{ memberId, login, logout: handleLogout }}>
             {children}
         </MemberSessionContext.Provider>
     )
@@ -44,18 +49,4 @@ export function useMemberSession() {
     const ctx = useContext(MemberSessionContext)
     if (!ctx) throw new Error('useMemberSession must be used within MemberSessionProvider')
     return ctx
-}
-
-export function useRequireMemberId(excludePaths: string[] = []) {
-    const { memberId } = useMemberSession();
-    const router = useRouter()
-    const pathname = usePathname()
-
-    useEffect(() => {
-        if (!memberId && !excludePaths.includes(pathname)) {
-            router.replace('/login')
-        }
-    }, [memberId, pathname])
-
-    return memberId
 } 

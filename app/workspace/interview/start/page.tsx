@@ -22,7 +22,6 @@ import { useInterviewWizard } from "@/hooks/useInterviewWizard"
 import { useState } from 'react'
 import type { Resume, CoverLetter } from '@/components/interview/steps/Step5Individual'
 import { useMemberSession } from '@/components/member-session-context'
-import { createInterview, createMemberInterview } from '@/api/interview'
 import { useRouter } from 'next/navigation'
 
 export default function InterviewStartPage() {

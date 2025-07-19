@@ -1,0 +1,1596 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "CloudComputing Backend API",
+    "description": "2025 클라우드 컴퓨팅 인하대 백엔드 API 명세서",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "/" }],
+  "security": [{ "JWT TOKEN": [] }],
+  "paths": {
+    "/resumes/upload": {
+      "get": {
+        "tags": ["이력서 API"],
+        "summary": "이력서를 업로드할 presignedURL 발급",
+        "description": "업로드할 파일을 이름을 넘길 떄, 확장자를 포함합니다.",
+        "operationId": "getPresignedUploadUrl",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePresignedUploadDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["이력서 API"],
+        "summary": "S3에 저장된 이력서 메타데이터 저장",
+        "operationId": "saveResume",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResumeCreateDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCreateResumeResultDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/feedback": {
+      "post": {
+        "tags": ["알림 API"],
+        "summary": "전체 피드백 생성 완료 알림 전송",
+        "description": "AI 서버에서 전체 피드백 생성을 완료하면 모의 면접 참가자에게 알림을 전송합니다.",
+        "operationId": "notifyFeedbackCreated",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FeedbackArrivedDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseVoid" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews": {
+      "post": {
+        "tags": ["인터뷰 API"],
+        "summary": "면접 생성 API",
+        "description": "새로운 면접을 생성합니다.",
+        "operationId": "createInterview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InterviewCreateDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInterviewCreateResultDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/{interviewId}": {
+      "post": {
+        "tags": ["사용자 인터뷰 API"],
+        "summary": "일대다 면접 참여 신청 API",
+        "description": "면접, 사용자, 이력서, 자소서 id를 전부 받아와 사용자 면접을 생성합니다.",
+        "operationId": "createMemberInterview",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/createMemberInterviewDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCreateMemberInterviewDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["인터뷰 API"],
+        "summary": "면접 수정 API",
+        "description": "면접 이름, 설명, 최대 인원, 공개 여부를 수정합니다.",
+        "operationId": "updateInterview",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InterviewUpdateDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInterviewUpdateResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/coverletters": {
+      "post": {
+        "tags": ["자기소개서 API"],
+        "summary": "자기소개서 생성",
+        "operationId": "createCoverletter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/createCoverletterDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCreateCoverletterDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reissue": {
+      "post": {
+        "tags": ["oauth-controller"],
+        "summary": "토큰 재발급 API",
+        "description": "refresh token을 통해 새로운 access token을 발급 받습니다.",
+        "operationId": "reissueToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenReissueRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTokenReissueResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{notificationId}/read": {
+      "patch": {
+        "tags": ["알림 API"],
+        "summary": "단일 알림 읽음 처리",
+        "description": "알림을 읽음 처리합니다.",
+        "operationId": "readNotification",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseVoid" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/members": {
+      "get": {
+        "tags": ["사용자 API"],
+        "summary": "사용자 프로필 조회 API",
+        "description": "사용자의 프로필을 조회합니다.",
+        "operationId": "getBasicInfo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMemberInfoResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["사용자 API"],
+        "summary": "사용자 기본 정보 등록 API",
+        "description": "사용자의 기본 정보(전화번호, 직무 분야, 자기소개)를 등록합니다.",
+        "operationId": "registerBasicInfo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/registerInfoDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMemberInfoResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/members/info": {
+      "patch": {
+        "tags": ["사용자 API"],
+        "summary": "사용자 기본 정보 변경 API",
+        "description": "사용자의 기본 정보(이름, 전화번호, 직무 분야, 자기소개)를 변경합니다.",
+        "operationId": "updateBasicInfo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/updateInfoDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMemberInfoResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/{interviewId}/waiting-room": {
+      "patch": {
+        "tags": ["사용자 인터뷰 API"],
+        "summary": "면접 대기실 내 사용자의 상태를 변경하는 API",
+        "description": "면접, 사용자 id, 사용자 상태를 요청 받아 사용자 면접의 상태를 수정합니다.",
+        "operationId": "changeParticipantsStatus",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/changeMemberStatusDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMemberInterviewStatusDTO"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/interviews/{interviewId}/option": {
+      "patch": {
+        "tags": ["인터뷰 API"],
+        "summary": "면접 옵션 수정 API",
+        "description": "목소리 유형, 최대 질문 개수, 답변 가능 시간을 수정합니다.",
+        "operationId": "updateInterviewOption",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterviewOptionUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInterviewOptionUpdateResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/{interviewId}/end": {
+      "patch": {
+        "tags": ["인터뷰 API"],
+        "summary": "면접 종료 API",
+        "description": "면접 종료 시간과 사용자 면접의 상태를 변경합니다.",
+        "operationId": "terminateInterview",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/endInterviewRequestDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInterviewEndResultDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/{interviewId}/documents": {
+      "patch": {
+        "tags": ["사용자 인터뷰 API"],
+        "summary": "나의 면접에서 자기소개서 또는 이력서 변경 API",
+        "description": "면접 시작전, 자기소개서나 이력서를 변경(변경할 ID) 합니다. 만약 변경하지 않을 경우 기존 아이디를 담아서 요청해주세요!",
+        "operationId": "updateInterviewDocuments",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/updateDocumentDTO" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMemberInterviewDocumentDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resumes/{resumeId}": {
+      "get": {
+        "tags": ["이력서 API"],
+        "summary": "이력서 상세 조회",
+        "operationId": "getResumeDetail",
+        "parameters": [
+          {
+            "name": "resumeId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseResumeDetailDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resumes/": {
+      "get": {
+        "tags": ["이력서 API"],
+        "summary": "사용자의 이력서 리스트 조회",
+        "operationId": "getResumeList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseResumeListDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["알림 API"],
+        "summary": "한 달 간 받은 모든 알림 조회",
+        "description": "한 달 간 받은 모든 알림을 한 번에 조회합니다.(알림함 클릭할 때 요청)",
+        "operationId": "findNotifications",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNotificationListDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/subscribe": {
+      "get": {
+        "tags": ["알림 API"],
+        "summary": "SSE 알림 구독",
+        "description": "앞으로 서버로부터 실시간 알림을 수신합니다.",
+        "operationId": "subscribeNotifications",
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "default": "" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": { "$ref": "#/components/schemas/SseEmitter" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mypage/interviews": {
+      "get": {
+        "tags": ["사용자 인터뷰 API"],
+        "summary": "나의 면접 리스트 조회 API",
+        "description": "나의 면접 리스트를 조회합니다.(상태 구분, 페이징 X)",
+        "operationId": "getMyInterviews",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMyInterviewListDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/{interviewId}/start": {
+      "get": {
+        "tags": ["인터뷰 API"],
+        "summary": "면접 시작 API",
+        "description": "해당 API가 호출되면 AI서버에게 넘겨줄 면접의 모든 정보를 넘겨줍니다.",
+        "operationId": "startInterview",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInterviewStartResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/group": {
+      "get": {
+        "tags": ["인터뷰 API"],
+        "summary": "일대다 면접 모집글 조회 API",
+        "description": "일대다 면접 모집글을 조회합니다.",
+        "operationId": "getGroupInterviewCards",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListInterviewGroupCardDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interviews/group/{interviewId}": {
+      "get": {
+        "tags": ["인터뷰 API"],
+        "summary": "일대다 면접 모집글 세부 조회 API",
+        "description": "일대다 면접 모집글 세부를 조회합니다.",
+        "operationId": "getGroupInterviewDetail",
+        "parameters": [
+          {
+            "name": "interviewId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseGroupInterviewDetailDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/coverletters/{coverletterId}": {
+      "get": {
+        "tags": ["자기소개서 API"],
+        "summary": "자기소개서 세부 조회",
+        "operationId": "getCoverletterDetail",
+        "parameters": [
+          {
+            "name": "coverletterId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCoverletterDetailDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/coverletters/me": {
+      "get": {
+        "tags": ["자기소개서 API"],
+        "summary": "나의 자기소개서 리스트 조회",
+        "operationId": "findMyCoverletter",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMyCoverletterListDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/{socialProvider}": {
+      "get": {
+        "tags": ["oauth-controller"],
+        "summary": "소셜 로그인 시작 API",
+        "description": "소셜 로그인 시작합니다.",
+        "operationId": "socialProvider",
+        "parameters": [
+          {
+            "name": "socialProvider",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "enum": ["GOOGLE", "KAKAO"] }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/{socialProvider}/callback": {
+      "get": {
+        "tags": ["oauth-controller"],
+        "summary": "소셜 로그인 콜백 API",
+        "description": "소셜 로그인 콜백 처리합니다.",
+        "operationId": "callback",
+        "parameters": [
+          {
+            "name": "socialProvider",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "enum": ["GOOGLE", "KAKAO"] }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/logout": {
+      "delete": {
+        "tags": ["oauth-controller"],
+        "summary": "소셜 로그아웃 API",
+        "description": "소셜 로그아웃 합니다.",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ResumeCreateDTO": {
+        "required": ["fileName", "fileSize", "fileUrl"],
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "integer", "format": "int64" },
+          "fileName": { "type": "string" },
+          "fileUrl": { "type": "string" },
+          "fileSize": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ApiResponseCreateResumeResultDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/CreateResumeResultDTO" }
+        }
+      },
+      "CreateResumeResultDTO": {
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FeedbackArrivedDTO": {
+        "required": ["interviewId", "memberInterviewId"],
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "memberInterviewId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "type": "object" }
+        }
+      },
+      "InterviewCreateDTO": {
+        "required": [
+          "answerTime",
+          "corporateName",
+          "coverLetterId",
+          "description",
+          "interviewFormat",
+          "interviewType",
+          "jobName",
+          "name",
+          "questionNumber",
+          "resumeId",
+          "voiceType"
+        ],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "sessionName": { "type": "string" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "interviewFormat": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "GROUP"]
+          },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          },
+          "voiceType": {
+            "type": "string",
+            "enum": [
+              "MALE20",
+              "MALE30",
+              "MALE40",
+              "MALE50",
+              "FEMALE20",
+              "FEMALE30",
+              "FEMALE40",
+              "FEMALE50"
+            ]
+          },
+          "questionNumber": { "type": "integer", "format": "int32" },
+          "answerTime": { "type": "integer", "format": "int32" },
+          "startType": { "type": "string", "enum": ["NOW", "SCHEDULED"] },
+          "scheduledDate": { "type": "string" },
+          "scheduledTime": { "type": "string" },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "isOpen": { "type": "boolean" },
+          "resumeId": { "type": "integer", "format": "int64" },
+          "resumeTitle": { "type": "string" },
+          "coverLetterId": { "type": "integer", "format": "int64" },
+          "coverLetterTitle": { "type": "string" },
+          "inviteEmailDTOList": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/InviteEmailDTO" }
+          }
+        }
+      },
+      "InviteEmailDTO": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "email": { "type": "string" }
+        }
+      },
+      "ApiResponseInterviewCreateResultDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/InterviewCreateResultDTO" }
+        }
+      },
+      "InterviewCreateResultDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "interviewFormat": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "GROUP"]
+          },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          },
+          "startType": { "type": "string", "enum": ["NOW", "SCHEDULED"] },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "createMemberInterviewDTO": {
+        "required": ["coverletterId", "resumeId"],
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "coverletterId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ApiResponseCreateMemberInterviewDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/CreateMemberInterviewDTO" }
+        }
+      },
+      "CreateMemberInterviewDTO": {
+        "type": "object",
+        "properties": {
+          "memberInterviewId": { "type": "integer", "format": "int64" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "createCoverletterDTO": {
+        "required": ["corporateName", "jobName", "memberId", "qnaDTOList"],
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "integer", "format": "int64" },
+          "corporateName": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "jobName": { "maxLength": 20, "minLength": 0, "type": "string" },
+          "qnaDTOList": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/createQnaDTO" }
+          }
+        }
+      },
+      "createQnaDTO": {
+        "required": ["answer", "question"],
+        "type": "object",
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      },
+      "ApiResponseCreateCoverletterDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/createCoverletterDTO" }
+        }
+      },
+      "TokenReissueRequestDto": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string" } }
+      },
+      "ApiResponseTokenReissueResponseDto": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/TokenReissueResponseDto" }
+        }
+      },
+      "TokenReissueResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" }
+        }
+      },
+      "registerInfoDTO": {
+        "required": ["introduction", "jobType", "phone"],
+        "type": "object",
+        "properties": {
+          "phone": {
+            "pattern": "^01[016789]-\\d{4}-\\d{4}$",
+            "type": "string",
+            "description": "휴대폰 번호",
+            "example": "010-1234-5678"
+          },
+          "jobType": { "type": "string" },
+          "introduction": { "type": "string" }
+        }
+      },
+      "ApiResponseMemberInfoResponseDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/MemberInfoResponseDTO" }
+        }
+      },
+      "MemberInfoResponseDTO": {
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "jobType": { "type": "string" },
+          "introduction": { "type": "string" }
+        }
+      },
+      "updateInfoDTO": {
+        "required": ["introduction", "jobType", "name", "phone"],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "phone": {
+            "pattern": "^01[016789]-\\d{4}-\\d{4}$",
+            "type": "string",
+            "description": "휴대폰 번호",
+            "example": "010-1234-5678"
+          },
+          "jobType": { "type": "string" },
+          "introduction": { "type": "string" }
+        }
+      },
+      "InterviewUpdateDTO": {
+        "required": ["description", "name"],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "isOpen": { "type": "boolean" }
+        }
+      },
+      "ApiResponseInterviewUpdateResponseDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": {
+            "$ref": "#/components/schemas/InterviewUpdateResponseDTO"
+          }
+        }
+      },
+      "InterviewUpdateResponseDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "open": { "type": "boolean" }
+        }
+      },
+      "changeMemberStatusDTO": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["SCHEDULED", "NO_SHOW", "IN_PROGRESS", "DONE"]
+          }
+        }
+      },
+      "ApiResponseMemberInterviewStatusDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/MemberInterviewStatusDTO" }
+        }
+      },
+      "MemberInterviewStatusDTO": {
+        "type": "object",
+        "properties": {
+          "memberInterviewId": { "type": "integer", "format": "int64" },
+          "status": {
+            "type": "string",
+            "enum": ["SCHEDULED", "NO_SHOW", "IN_PROGRESS", "DONE"]
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InterviewOptionUpdateDTO": {
+        "required": ["answerTime", "questionNumber", "voiceType"],
+        "type": "object",
+        "properties": {
+          "voiceType": {
+            "type": "string",
+            "enum": [
+              "MALE20",
+              "MALE30",
+              "MALE40",
+              "MALE50",
+              "FEMALE20",
+              "FEMALE30",
+              "FEMALE40",
+              "FEMALE50"
+            ]
+          },
+          "questionNumber": { "type": "integer", "format": "int32" },
+          "answerTime": { "type": "integer", "format": "int32" }
+        }
+      },
+      "ApiResponseInterviewOptionUpdateResponseDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": {
+            "$ref": "#/components/schemas/InterviewOptionUpdateResponseDTO"
+          }
+        }
+      },
+      "InterviewOptionUpdateResponseDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "interviewOptionId": { "type": "integer", "format": "int64" },
+          "voiceType": {
+            "type": "string",
+            "enum": [
+              "MALE20",
+              "MALE30",
+              "MALE40",
+              "MALE50",
+              "FEMALE20",
+              "FEMALE30",
+              "FEMALE40",
+              "FEMALE50"
+            ]
+          },
+          "questionNumber": { "type": "integer", "format": "int32" },
+          "answerTime": { "type": "integer", "format": "int32" }
+        }
+      },
+      "endInterviewRequestDTO": {
+        "required": ["endedAt"],
+        "type": "object",
+        "properties": { "endedAt": { "type": "string", "format": "date-time" } }
+      },
+      "ApiResponseInterviewEndResultDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/InterviewEndResultDTO" }
+        }
+      },
+      "InterviewEndResultDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "endedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "updateDocumentDTO": {
+        "required": ["coverletterId", "resumeId"],
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "coverletterId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ApiResponseMemberInterviewDocumentDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": {
+            "$ref": "#/components/schemas/MemberInterviewDocumentDTO"
+          }
+        }
+      },
+      "MemberInterviewDocumentDTO": {
+        "type": "object",
+        "properties": {
+          "memberInterviewId": { "type": "integer", "format": "int64" },
+          "resumeId": { "type": "integer", "format": "int64" },
+          "coverLetterId": { "type": "integer", "format": "int64" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiResponseResumeDetailDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/ResumeDetailDTO" }
+        }
+      },
+      "ResumeDetailDTO": {
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "fileName": { "type": "string" },
+          "fileUrl": { "type": "string" },
+          "fileSize": { "type": "integer", "format": "int64" },
+          "fileType": { "type": "string", "enum": ["PDF"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiResponsePresignedUploadDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/PresignedUploadDTO" }
+        }
+      },
+      "PresignedUploadDTO": {
+        "type": "object",
+        "properties": {
+          "presignedUrl": { "type": "string" },
+          "key": { "type": "string" },
+          "fileUrl": { "type": "string" }
+        }
+      },
+      "ApiResponseResumeListDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/ResumeListDTO" }
+        }
+      },
+      "ResumeDTO": {
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "fileName": { "type": "string" },
+          "fileSize": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ResumeListDTO": {
+        "type": "object",
+        "properties": {
+          "resumes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResumeDTO" }
+          }
+        }
+      },
+      "ApiResponseNotificationListDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/NotificationListDTO" }
+        }
+      },
+      "NotificationDTO": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ROOM_ENTRY",
+              "INTERVIEW_REMINDER_1D",
+              "INTERVIEW_REMINDER_30M",
+              "FEEDBACK_RECEIVED"
+            ]
+          },
+          "url": { "type": "string" },
+          "message": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "read": { "type": "boolean" }
+        }
+      },
+      "NotificationListDTO": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotificationDTO" }
+          },
+          "size": { "type": "integer", "format": "int32" }
+        }
+      },
+      "SseEmitter": {
+        "type": "object",
+        "properties": { "timeout": { "type": "integer", "format": "int64" } }
+      },
+      "ApiResponseMyInterviewListDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/MyInterviewListDTO" }
+        }
+      },
+      "InterviewCardDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "currentParticipants": { "type": "integer", "format": "int32" },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "endedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InterviewOptionPreviewDTO": {
+        "type": "object",
+        "properties": {
+          "interviewFormat": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "GROUP"]
+          },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          }
+        }
+      },
+      "MyInterviewDTO": {
+        "type": "object",
+        "properties": {
+          "myInterviewCardDTO": {
+            "$ref": "#/components/schemas/InterviewCardDTO"
+          },
+          "interviewOptionPreviewDTO": {
+            "$ref": "#/components/schemas/InterviewOptionPreviewDTO"
+          },
+          "memberInterviewStatusDTO": {
+            "$ref": "#/components/schemas/MemberInterviewStatusDTO"
+          }
+        }
+      },
+      "MyInterviewListDTO": {
+        "type": "object",
+        "properties": {
+          "myInterviews": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyInterviewDTO" }
+          }
+        }
+      },
+      "ApiResponseInterviewStartResponseDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/InterviewStartResponseDTO" }
+        }
+      },
+      "CoverletterDetailDTO": {
+        "type": "object",
+        "properties": {
+          "coverletterId": { "type": "integer", "format": "int64" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "qnaList": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/QnaDTO" }
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InterviewDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "startType": { "type": "string", "enum": ["NOW", "SCHEDULED"] },
+          "participantCount": { "type": "integer", "format": "int32" }
+        }
+      },
+      "InterviewOptionDetailDTO": {
+        "type": "object",
+        "properties": {
+          "interviewFormat": {
+            "type": "string",
+            "enum": ["INDIVIDUAL", "GROUP"]
+          },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          },
+          "voiceType": {
+            "type": "string",
+            "enum": [
+              "MALE20",
+              "MALE30",
+              "MALE40",
+              "MALE50",
+              "FEMALE20",
+              "FEMALE30",
+              "FEMALE40",
+              "FEMALE50"
+            ]
+          },
+          "questionNumber": { "type": "integer", "format": "int32" },
+          "answerTime": { "type": "integer", "format": "int32" }
+        }
+      },
+      "InterviewStartResponseDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "interview": { "$ref": "#/components/schemas/InterviewDTO" },
+          "options": {
+            "$ref": "#/components/schemas/InterviewOptionDetailDTO"
+          },
+          "participants": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ParticipantDTO" }
+          }
+        }
+      },
+      "ParticipantDTO": {
+        "type": "object",
+        "properties": {
+          "memberInterviewId": { "type": "integer", "format": "int64" },
+          "resumeDTO": { "$ref": "#/components/schemas/ResumeSimpleDTO" },
+          "coverLetterDTO": {
+            "$ref": "#/components/schemas/CoverletterDetailDTO"
+          }
+        }
+      },
+      "QnaDTO": {
+        "type": "object",
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      },
+      "ResumeSimpleDTO": {
+        "type": "object",
+        "properties": {
+          "resumeId": { "type": "integer", "format": "int64" },
+          "fileUrl": { "type": "string" }
+        }
+      },
+      "ApiResponseListInterviewGroupCardDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/InterviewGroupCardDTO" }
+          }
+        }
+      },
+      "InterviewGroupCardDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "sessionName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          },
+          "currentParticipants": { "type": "integer", "format": "int32" },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "startedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiResponseGroupInterviewDetailDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/GroupInterviewDetailDTO" }
+        }
+      },
+      "GroupInterviewDetailDTO": {
+        "type": "object",
+        "properties": {
+          "interviewId": { "type": "integer", "format": "int64" },
+          "memberInterviewId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "sessionName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "interviewType": {
+            "type": "string",
+            "enum": ["PERSONALITY", "TECHNICAL"]
+          },
+          "maxParticipants": { "type": "integer", "format": "int32" },
+          "currentParticipants": { "type": "integer", "format": "int32" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "hostName": { "type": "string" },
+          "groupInterviewParticipants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupInterviewParticipantDTO"
+            }
+          }
+        }
+      },
+      "GroupInterviewParticipantDTO": {
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "host": { "type": "boolean" },
+          "submitted": { "type": "boolean" }
+        }
+      },
+      "ApiResponseCoverletterDetailDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/CoverletterDetailDTO" }
+        }
+      },
+      "ApiResponseMyCoverletterListDTO": {
+        "type": "object",
+        "properties": {
+          "isSuccess": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "result": { "$ref": "#/components/schemas/MyCoverletterListDTO" }
+        }
+      },
+      "MyCoverletterDTO": {
+        "type": "object",
+        "properties": {
+          "coverletterId": { "type": "integer", "format": "int64" },
+          "corporateName": { "type": "string" },
+          "jobName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MyCoverletterListDTO": {
+        "type": "object",
+        "properties": {
+          "coverletters": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyCoverletterDTO" }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "JWT TOKEN": {
+        "type": "http",
+        "name": "JWT TOKEN",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

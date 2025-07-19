@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemberSession } from '../../components/member-session-context'
 import { Button } from '@/components/ui/button'
 import { setAccessToken, setRefreshToken } from '@/utils/session/token-storage'
-import { serverFetch } from '@/utils/fetch/fetch'
+import { getMemberInfo } from '@/api/member'
 
 export default function AuthRedirectPageInner() {
     const router = useRouter()
@@ -14,9 +14,13 @@ export default function AuthRedirectPageInner() {
     const [error, setError] = useState<string | null>(null)
 
     const login = async () => {
-        const memberId = await serverFetch.get('/members').then(data => data.result.memberId)
-        loginMember(memberId)
-        router.replace('/workspace')
+        const memberId = await getMemberInfo().then(data => data.result?.memberId)
+        if (memberId) {
+            loginMember(memberId)
+            router.replace('/workspace')
+        } else {
+            setError('사용자 정보를 가져올 수 없습니다.')
+        }
     }
 
     useEffect(() => {
@@ -40,22 +44,19 @@ export default function AuthRedirectPageInner() {
 
     if (error) {
         return (
-            <div className='min-h-screen flex items-center justify-center'>
-                <div className='bg-white p-8 rounded shadow text-center'>
-                    <p className='text-red-500 font-bold mb-2'>로그인 실패</p>
-                    <p className='text-gray-600'>에러 내용 : {error}</p>
-
-                    <Button onClick={() => router.replace('/login')}>로그인 페이지로 이동</Button>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-screen">
+                <div className="text-red-500 mb-4">{error}</div>
+                <Button onClick={() => router.push('/login')}>
+                    로그인 페이지로 돌아가기
+                </Button>
             </div>
         )
     }
 
     return (
-        <div className='min-h-screen flex items-center justify-center'>
-            <div className='bg-white p-8 rounded shadow text-center'>
-                <p className='text-gray-700'>로그인 처리 중입니다...</p>
-            </div>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+            <div className="mt-4">로그인 처리 중...</div>
         </div>
     )
 } 

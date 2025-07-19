@@ -14,6 +14,8 @@ import {
   ApiResponseGroupInterviewDetailDTO,
   ApiResponseInterviewStartResponseDTO,
   ApiResponseMyInterviewListDTO,
+  UpdateDocumentDTO,
+  ApiResponseMemberInterviewDocumentDTO,
 } from "./types/interview-types";
 
 // 면접 생성
@@ -117,4 +119,15 @@ export async function getInterviewDetail(interviewId: number) {
   return serverFetch.get<ApiResponseInterviewStartResponseDTO>(
     `/interviews/${interviewId}/start`
   );
+}
+
+// 면접 문서 변경
+export async function updateInterviewDocuments(
+  interviewId: number,
+  data: UpdateDocumentDTO
+) {
+  return serverFetch.patch<
+    ApiResponseMemberInterviewDocumentDTO,
+    UpdateDocumentDTO
+  >(`/interviews/${interviewId}/documents`, data);
 }
