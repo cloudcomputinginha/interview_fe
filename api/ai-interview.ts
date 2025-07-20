@@ -42,9 +42,9 @@ export async function generateQuestions(
 	const updatedPayload = {
 		...payload,
 		result: {
-			...payload.result,
+			...payload,
 			interview: {
-				...payload.result.interview,
+				...payload?.interview,
 				notice_url:
 					'https://hanabank.incruit.com/hire/viewhire.asp?projectid=113',
 			},
