@@ -107,9 +107,8 @@ export default function LandingPage() {
 					<div className="bg-[#8FD694] bg-opacity-10 p-8 rounded-2xl">
 						<div className="flex flex-col items-center text-center">
 							<p className="text-xl italic mb-6">
-								"InterviewPro AI 덕분에 자신감을 얻고 실제 면접에서도 좋은
-								결과를 얻을 수 있었습니다. 특히 피드백이 구체적이어서 많은
-								도움이 되었어요."
+								"Injob AI 덕분에 자신감을 얻고 실제 면접에서도 좋은 결과를 얻을
+								수 있었습니다. 특히 피드백이 구체적이어서 많은 도움이 되었어요."
 							</p>
 							<div className="flex items-center">
 								<div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
@@ -131,7 +130,7 @@ export default function LandingPage() {
 							<div className="w-6 h-6 rounded-full bg-[#8FD694] flex items-center justify-center">
 								<span className="text-white font-bold text-xs">AI</span>
 							</div>
-							<span className="font-bold">InterviewPro</span>
+							<span className="font-bold">Injob</span>
 						</div>
 						<div className="flex space-x-6 text-sm text-gray-600">
 							<Link href="/about" className="hover:text-gray-900">
@@ -149,7 +148,7 @@ export default function LandingPage() {
 						</div>
 					</div>
 					<div className="text-center mt-6 text-sm text-gray-500">
-						© {new Date().getFullYear()} InterviewPro AI. All rights reserved.
+						© {new Date().getFullYear()} Injob AI. All rights reserved.
 					</div>
 				</div>
 			</footer>

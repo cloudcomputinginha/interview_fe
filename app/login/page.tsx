@@ -20,9 +20,7 @@ export default function LoginPage() {
 								<span className="text-white text-2xl font-bold">AI</span>
 							</div>
 						</div>
-						<h1 className="text-2xl font-bold text-gray-900">
-							InterviewPro AI
-						</h1>
+						<h1 className="text-2xl font-bold text-gray-900">Injob AI</h1>
 						<p className="mt-2 text-gray-600">
 							AI 모의 면접으로 취업을 준비하세요
 						</p>
@@ -109,7 +107,7 @@ export default function LoginPage() {
 						</Link>
 					</div>
 					<p className="text-center text-xs text-gray-400 mt-4">
-						© {new Date().getFullYear()} InterviewPro AI. All rights reserved.
+						© {new Date().getFullYear()} Injob AI. All rights reserved.
 					</p>
 				</div>
 			</footer>

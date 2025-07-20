@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import useSseNotifications from '@/hooks/useSseNotifications'
 import { convertDate } from '@/utils/date/convertDate'
+import { logout } from '@/api/auth'
 
 interface Notification {
 	type:
@@ -172,7 +173,13 @@ export function HeaderWithNotifications() {
 								</Link>
 							</DropdownMenuItem>
 							<DropdownMenuItem>
-								<Link href="/login" className="w-full">
+								<Link
+									href="/login"
+									className="w-full"
+									onClick={() => {
+										logout()
+									}}
+								>
 									로그아웃
 								</Link>
 							</DropdownMenuItem>

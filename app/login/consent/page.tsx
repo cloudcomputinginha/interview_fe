@@ -65,7 +65,7 @@ export default function ConsentPage() {
 							정보 제공에 동의해주세요
 						</h2>
 						<p className="text-sm text-gray-500 mb-6 text-center">
-							InterviewPro AI 서비스 이용을 위해 다음 정보 제공에 동의해주세요.
+							Injob AI 서비스 이용을 위해 다음 정보 제공에 동의해주세요.
 						</p>
 
 						<div className="space-y-6">

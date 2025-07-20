@@ -132,9 +132,9 @@ export default function GroupInterviewSessionPage() {
 			<div className="p-4 border-b border-gray-800 flex justify-between items-center">
 				<div className="flex items-center">
 					<div className="w-8 h-8 rounded-full bg-[#8FD694] flex items-center justify-center mr-2">
-						<span className="text-white font-bold">AI</span>
+						<span className="text-white font-bold">In</span>
 					</div>
-					<span className="font-bold">InterviewPro</span>
+					<span className="font-bold">job</span>
 				</div>
 				<div className="text-center">
 					<span className="text-sm text-gray-400">
