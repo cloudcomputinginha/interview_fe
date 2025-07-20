@@ -13,7 +13,9 @@ export default function Providers({ children }: { children: ReactNode }) {
 		<QueryClientProvider client={client}>
 			<MemberSessionProvider>{children}</MemberSessionProvider>
 			{/* 개발 중이면 열어두면 편리, 배포 시 빼도 OK */}
-			<ReactQueryDevtools initialIsOpen={false} />
+			{process.env.NODE_ENV === 'development' && (
+				<ReactQueryDevtools initialIsOpen={false} />
+			)}
 		</QueryClientProvider>
 	)
 }

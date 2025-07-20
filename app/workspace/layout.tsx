@@ -1,7 +1,6 @@
 'use client'
 import { ReactNode, useEffect } from 'react'
 import { useMemberSession } from '@/components/member-session-context'
-import { useRequireMemberId } from '@/components/member-session-context'
 import { usePathname } from 'next/navigation'
 
 const EXCLUDE_PATHS = [
@@ -13,7 +12,6 @@ const EXCLUDE_PATHS = [
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
 	const { memberId } = useMemberSession()
 
-	useRequireMemberId(EXCLUDE_PATHS)
 	const pathname = usePathname()
 
 	useEffect(() => {

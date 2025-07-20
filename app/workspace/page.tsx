@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/select'
 import { CommunityLayout } from '@/components/community-layout'
 import { HeaderWithNotifications } from '@/components/header-with-notifications'
-import { useRequireMemberId } from '@/components/member-session-context'
+import { useMemberSession } from '@/components/member-session-context'
 import {
 	useQueries,
 	useQuery,
@@ -74,8 +74,7 @@ export default function WorkspacePage() {
 	const [detailResumeDialogOpen, setDetailResumeDialogOpen] = useState(false)
 	const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null)
 	const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
-
-	const memberId = useRequireMemberId()
+	const { memberId } = useMemberSession()
 	const queryClient = useQueryClient()
 
 	// const convertDateLocal = (date: string) => {

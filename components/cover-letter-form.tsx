@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { useRequireMemberId } from '@/components/member-session-context'
+import { useMemberSession } from '@/components/member-session-context'
 
 interface CoverLetterFormProps {
 	onSubmit: (data: {
@@ -30,7 +30,7 @@ export function CoverLetterForm({
 	onCancel,
 	initialData,
 }: CoverLetterFormProps) {
-	const memberId = useRequireMemberId()
+	const { memberId } = useMemberSession()
 	const [corporateName, setCorporateName] = useState(
 		initialData?.corporateName || ''
 	)
