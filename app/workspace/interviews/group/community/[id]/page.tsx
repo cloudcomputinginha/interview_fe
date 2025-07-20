@@ -19,6 +19,7 @@ import type { GroupInterviewDetailDTO } from '@/api/types/interview-types'
 import { useQuery } from '@tanstack/react-query'
 import { useMemberSession } from '@/components/member-session-context'
 import { use as usePromise } from 'react'
+import LoadingSpinner from '@/components/loading'
 
 export default function InterviewPostDetailPage({
 	params,
@@ -30,6 +31,7 @@ export default function InterviewPostDetailPage({
 	const { data, isLoading, error } = useQuery({
 		queryKey: ['groupInterviewDetail', postId],
 		queryFn: () => getGroupInterviewDetail(Number(postId)),
+		retry: false,
 	})
 	const post: GroupInterviewDetailDTO | null = data?.result ?? null
 
@@ -49,6 +51,14 @@ export default function InterviewPostDetailPage({
 	const isAlreadyApplied = post?.groupInterviewParticipants?.some(
 		p => p.memberId === memberId
 	)
+
+	// 에러 처리
+	useEffect(() => {
+		if (error) {
+			window.location.href = '/workspace/interviews/group/community'
+			alert(error.message)
+		}
+	}, [error])
 
 	// 면접까지 남은 시간 계산
 	useEffect(() => {
@@ -118,15 +128,7 @@ export default function InterviewPostDetailPage({
 		},
 	]
 
-	if (isLoading) return <div className="p-10 text-center">로딩 중...</div>
-	if (error || !post) {
-		let msg = '데이터 없음'
-		if (error) {
-			if (typeof error === 'string') msg = error
-			else if (error instanceof Error) msg = error.message
-		}
-		return <div className="p-10 text-center text-red-500">{msg}</div>
-	}
+	if (isLoading || !post) return <LoadingSpinner />
 
 	return (
 		<>

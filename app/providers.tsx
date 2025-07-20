@@ -7,7 +7,16 @@ import { MemberSessionProvider } from '../components/member-session-context'
 
 export default function Providers({ children }: { children: ReactNode }) {
 	// 한 번만 생성되는 QueryClient
-	const [client] = useState(() => new QueryClient())
+	const [client] = useState(
+		() =>
+			new QueryClient({
+				defaultOptions: {
+					queries: {
+						retry: false,
+					},
+				},
+			})
+	)
 
 	return (
 		<QueryClientProvider client={client}>

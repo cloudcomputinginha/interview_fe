@@ -81,18 +81,23 @@ function createFetch(baseURL: string) {
 			? `${baseURL}${url}?${paramsURL}`
 			: `${baseURL}${url}`
 		const response = await fetchWithAuthRetry(input, { method: 'GET' })
+
+		const json = await response.json()
+		console.log(json)
 		if (!response.ok) {
 			if (response.status === 400) {
-				throw new BadRequestError('Bad Request')
+				throw new BadRequestError(
+					json.result.flatMap((e: any) => e.message).join(', ') || 'Bad Request'
+				)
 			} else if (response.status === 404) {
-				throw new NotFoundError('Not Found')
+				throw new NotFoundError(json.message || 'Not Found')
 			} else if (response.status === 422) {
-				throw new UnProcessableError('UnProcessable')
+				throw new UnProcessableError(json.message || 'UnProcessable')
 			} else {
 				throw new Error('UnExpected Error')
 			}
 		}
-		return response.json()
+		return json
 	}
 
 	const post = async <T = boolean, K = unknown>(
@@ -106,16 +111,17 @@ function createFetch(baseURL: string) {
 			body: JSON.stringify(body),
 			headers: { 'Content-Type': 'application/json' },
 		})
+
+		const text = await response.text()
 		if (!response.ok) {
 			if (response.status === 400) {
-				throw new BadRequestError('Bad Request')
+				throw new BadRequestError(JSON.parse(text).message || 'Bad Request')
 			} else if (response.status === 404) {
 				throw new NotFoundError('Not Found')
 			} else {
 				throw new Error('UnExpected Error')
 			}
 		}
-		const text = await response.text()
 		return text.length > 0 ? (JSON.parse(text) as T) : response.ok
 	}
 

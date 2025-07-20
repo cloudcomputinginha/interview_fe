@@ -77,20 +77,6 @@ export default function WorkspacePage() {
 	const { memberId } = useMemberSession()
 	const queryClient = useQueryClient()
 
-	// const convertDateLocal = (date: string) => {
-
-	//   const dateObj = new Date(date + "Z");
-
-	//   // 유효성 검사
-	//   if (isNaN(dateObj.getTime())) {
-	//     console.error("❌ Invalid date:", date);
-	//     return "잘못된 날짜";
-	//   }
-
-	//   // 한국 표준시로 변환
-	//   return dateObj.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
-	// };
-	// 자소서 & 이력서 목록 가져오기
 	// TODO : 이력서 API 완성되면 가져오기
 	const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery(
 		{
@@ -578,6 +564,7 @@ function ResumeUploadDialog({
 			onSuccess()
 			alert('이력서가 성공적으로 업로드되었습니다.')
 		} catch (e: any) {
+			console.error(e)
 			setError(e.message || '업로드 실패')
 			alert('업로드에 실패했습니다. 다시 시도해주세요.')
 		} finally {
