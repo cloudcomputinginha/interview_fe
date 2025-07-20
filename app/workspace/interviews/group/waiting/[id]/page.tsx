@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useQuery } from '@tanstack/react-query'
-import { getGroupInterviewDetail } from '@/api/interview'
+import { getGroupInterviewDetail } from '@/apis/interview'
 import { useRouter } from 'next/navigation'
 import { useMemberSession } from '@/components/member-session-context'
 import { useWaitingRoomSocket } from '@/utils/socket/use-waiting-room-socket'

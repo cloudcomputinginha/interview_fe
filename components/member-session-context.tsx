@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { logout } from '@/api/auth'
+import { logout } from '@/apis/auth'
 
 interface MemberSessionContextProps {
 	memberId: number | null

@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import type { UserProfile } from '../types/profile'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { UpdateInfoDTO } from '@/api/types/member-types'
-import { updateBasicInfo } from '@/api/member'
+import { UpdateInfoDTO } from '@/apis/types/member-types'
+import { updateBasicInfo } from '@/apis/member'
 import { useMemberSession } from '@/components/member-session-context'
 import { toast } from 'sonner'
 

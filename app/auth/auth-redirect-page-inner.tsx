@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemberSession } from '../../components/member-session-context'
 import { Button } from '@/components/ui/button'
 import { setAccessToken, setRefreshToken } from '@/utils/session/token-storage'
-import { getMemberInfo } from '@/api/member'
+import { getMemberInfo } from '@/apis/member'
 
 export default function AuthRedirectPageInner() {
 	const router = useRouter()

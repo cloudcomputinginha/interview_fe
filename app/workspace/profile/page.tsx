@@ -11,7 +11,7 @@ import type { UserProfile } from './types/profile'
 import { HeaderWithNotifications } from '@/components/header-with-notifications'
 import { useMemberSession } from '@/components/member-session-context'
 import { useQuery } from '@tanstack/react-query'
-import { getMemberInfo } from '@/api/member'
+import { getMemberInfo } from '@/apis/member'
 import { useMemo } from 'react'
 
 const INITIAL_PROFILE: UserProfile = {

@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { updateInterview, updateInterviewOption } from '@/api/interview'
+import { updateInterview, updateInterviewOption } from '@/apis/interview'
 
 export default function EditInterviewPage({
 	params,

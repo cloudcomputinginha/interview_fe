@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import useSseNotifications from '@/hooks/useSseNotifications'
 import { convertDate } from '@/utils/date/convertDate'
-import { logout } from '@/api/auth'
+import { logout } from '@/apis/auth'
 
 interface Notification {
 	type:

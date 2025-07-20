@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select'
 import { HeaderWithNotifications } from '@/components/header-with-notifications'
 import { CommunityLayout } from '@/components/community-layout'
-import { getGroupInterviewCards } from '@/api/interview'
+import { getGroupInterviewCards } from '@/apis/interview'
 import { useQuery } from '@tanstack/react-query'
 
 export default function InterviewCommunityPage() {

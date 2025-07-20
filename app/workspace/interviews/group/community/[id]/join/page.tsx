@@ -20,10 +20,10 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { getGroupInterviewDetail } from '@/api/interview'
-import { getResumeList } from '@/api/resume'
-import { findMyCoverletter } from '@/api/coverletter'
-import { createMemberInterview } from '@/api/interview'
+import { getGroupInterviewDetail } from '@/apis/interview'
+import { getResumeList } from '@/apis/resume'
+import { findMyCoverletter } from '@/apis/coverletter'
+import { createMemberInterview } from '@/apis/interview'
 import { useMemberSession } from '@/components/member-session-context'
 
 export default function JoinGroupInterviewPage({

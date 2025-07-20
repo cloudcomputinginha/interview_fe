@@ -4,7 +4,7 @@ import { use } from 'react'
 import { CheckCircle, MessageSquareQuote, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { terminateInterview } from '@/api/interview'
+import { terminateInterview } from '@/apis/interview'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { aiFetch } from '@/utils/fetch/fetch'
 

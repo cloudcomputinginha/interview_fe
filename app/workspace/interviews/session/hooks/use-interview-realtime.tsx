@@ -5,7 +5,7 @@ import React, {
 	useRef,
 	useCallback,
 } from 'react'
-import { AIInterviewSocket } from '@/api/ai-interview-socket'
+import { AIInterviewSocket } from '@/apis/ai-interview-socket'
 
 interface RealtimeContextValue {
 	isAnswering: boolean

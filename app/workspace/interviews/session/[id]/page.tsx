@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { X, AlertCircle, Loader2 } from 'lucide-react'
 import { useInterviewSession } from '../hooks/use-interview-session'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AIInterviewSocket } from '@/api/ai-interview-socket'
+import { AIInterviewSocket } from '@/apis/ai-interview-socket'
 import { RealtimeProvider } from '../hooks/use-interview-realtime'
 import { useInterviewRealtime } from '../hooks/use-interview-realtime'
 import {

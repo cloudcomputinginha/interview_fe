@@ -50,13 +50,13 @@ import {
 	findMyCoverletter,
 	createCoverletter,
 	getCoverletterDetail,
-} from '@/api/coverletter'
+} from '@/apis/coverletter'
 import {
 	getResumeList,
 	getResumeDetail,
 	getPresignedUploadUrl,
 	saveResume,
-} from '@/api/resume'
+} from '@/apis/resume'
 import { convertDate } from '@/utils/date/convertDate'
 import { Progress } from '@/components/ui/progress'
 

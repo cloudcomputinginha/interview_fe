@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import type { InterviewSession, QA } from '@/api/types/interview-types'
+import type { InterviewSession, QA } from '@/apis/types/interview-types'
 import {
 	generateQuestions,
 	answerMainQuestion,
@@ -8,8 +8,8 @@ import {
 	getSessionById,
 	generateFeedback,
 	generateFinalReport,
-} from '@/api/ai-interview'
-import { getInterviewDetail } from '@/api/interview'
+} from '@/apis/ai-interview'
+import { getInterviewDetail } from '@/apis/interview'
 import { useQuery } from '@tanstack/react-query'
 import { useMemberSession } from '@/components/member-session-context'
 

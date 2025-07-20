@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useMutation } from '@tanstack/react-query'
 import { aiFetch } from '@/utils/fetch/fetch'
-import { terminateInterview } from '@/api/interview'
+import { terminateInterview } from '@/apis/interview'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 

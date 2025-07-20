@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-import { createInterview } from '@/api/interview'
-import type { InterviewCreateDTO } from '@/api/types/interview-types'
+import { createInterview } from '@/apis/interview'
+import type { InterviewCreateDTO } from '@/apis/types/interview-types'
 import {
 	initialFormState,
 	type InterviewFormState,

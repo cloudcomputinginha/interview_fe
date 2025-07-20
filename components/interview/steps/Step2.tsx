@@ -22,12 +22,12 @@ import {
 	getPresignedUploadUrl,
 	saveResume,
 	getResumeDetail,
-} from '@/api/resume'
+} from '@/apis/resume'
 import {
 	findMyCoverletter,
 	createCoverletter,
 	getCoverletterDetail,
-} from '@/api/coverletter'
+} from '@/apis/coverletter'
 import { Progress } from '@/components/ui/progress'
 import { CoverLetterForm } from '@/components/cover-letter-form'
 import {

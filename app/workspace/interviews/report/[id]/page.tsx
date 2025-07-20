@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { aiFetch } from '@/utils/fetch/fetch'
-import { terminateInterview } from '@/api/interview'
+import { terminateInterview } from '@/apis/interview'
 
 // 조회 페이지
 

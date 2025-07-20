@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Camera } from 'lucide-react'
 import type { UserProfile } from '../types/profile'
 import { JOB_FIELDS } from '../constants/jobFields'
-import { MemberInfoResponseDTO } from '@/api/types/member-types'
+import { MemberInfoResponseDTO } from '@/apis/types/member-types'
 import Loading from '../../loading'
 
 interface ProfileBasicCardProps {
