@@ -19,6 +19,4 @@ export interface UserProfile {
 	bio: string
 	jobField: string
 	profileImage: string
-	notifications: NotificationSettings
-	privacy: PrivacySettings
 }

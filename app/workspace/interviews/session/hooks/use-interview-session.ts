@@ -9,7 +9,7 @@ import {
 	generateFeedback,
 	generateFinalReport,
 } from '@/api/ai-interview'
-import { getInterviewDetail, getMyInterviewList } from '@/api/interview'
+import { getInterviewDetail } from '@/api/interview'
 import { useQuery } from '@tanstack/react-query'
 import { useMemberSession } from '@/components/member-session-context'
 
@@ -109,7 +109,7 @@ export function useInterviewSession(
 		{
 			queryKey: ['interviewDetail', interviewId],
 			queryFn: () => getInterviewDetail(Number(interviewId)),
-			enabled: !!interviewId,
+			enabled: !!interviewId && !!memberId,
 		}
 	)
 

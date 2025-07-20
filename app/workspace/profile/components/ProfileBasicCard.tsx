@@ -1,3 +1,5 @@
+'use client'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,12 +16,15 @@ import { Button } from '@/components/ui/button'
 import { Camera } from 'lucide-react'
 import type { UserProfile } from '../types/profile'
 import { JOB_FIELDS } from '../constants/jobFields'
+import { MemberInfoResponseDTO } from '@/api/types/member-types'
+import Loading from '../../loading'
 
 interface ProfileBasicCardProps {
-	userData: UserProfile
+	userData: MemberInfoResponseDTO | undefined
 	formData: UserProfile
 	isEditing: boolean
 	handleInputChange: (field: keyof UserProfile, value: string | boolean) => void
+	isFetching: boolean
 }
 
 export function ProfileBasicCard({
@@ -27,19 +32,17 @@ export function ProfileBasicCard({
 	formData,
 	isEditing,
 	handleInputChange,
+	isFetching,
 }: ProfileBasicCardProps) {
 	return (
 		<>
 			<div className="flex flex-col items-center mb-4">
+				{isFetching && <Loading />}
 				<div className="relative mb-4">
 					<Avatar className="w-24 h-24 border-2 border-[#8FD694]">
-						<AvatarImage
-							src={
-								userData.profileImage || '/placeholder.svg?height=96&width=96'
-							}
-						/>
+						<AvatarImage src={'/placeholder.svg?height=96&width=96'} />
 						<AvatarFallback className="bg-[#8FD694] text-white text-2xl">
-							{userData.name.charAt(0)}
+							{userData?.name ?? '이름 없음'}
 						</AvatarFallback>
 					</Avatar>
 					{isEditing && (
@@ -52,10 +55,12 @@ export function ProfileBasicCard({
 						</Button>
 					)}
 				</div>
-				<h2 className="text-xl font-bold">{userData.name}</h2>
-				<p className="text-gray-500 text-sm">{userData.email}</p>
+				<h2 className="text-xl font-bold">{userData?.name ?? '이름 없음'}</h2>
+				<p className="text-gray-500 text-sm">
+					{userData?.email ?? '이메일 없음'}
+				</p>
 				<Badge className="mt-2 bg-[#8FD694] hover:bg-[#8FD694]">
-					{userData.jobField}
+					{userData?.jobType ?? '직무 없음'}
 				</Badge>
 			</div>
 			<div className="space-y-4 mt-4">
@@ -69,7 +74,7 @@ export function ProfileBasicCard({
 						/>
 					) : (
 						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
-							{userData.name}
+							{userData?.name ?? '이름 없음'}
 						</p>
 					)}
 				</div>
@@ -84,7 +89,7 @@ export function ProfileBasicCard({
 						/>
 					) : (
 						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
-							{userData.email}
+							{userData?.email ?? '이메일 없음'}
 						</p>
 					)}
 				</div>
@@ -98,7 +103,7 @@ export function ProfileBasicCard({
 						/>
 					) : (
 						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
-							{userData.phone || '-'}
+							{userData?.phone ?? '전화번호 없음'}
 						</p>
 					)}
 				</div>
@@ -122,7 +127,7 @@ export function ProfileBasicCard({
 						</Select>
 					) : (
 						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
-							{userData.jobField}
+							{userData?.jobType ?? '직무 없음'}
 						</p>
 					)}
 				</div>
@@ -137,7 +142,7 @@ export function ProfileBasicCard({
 						/>
 					) : (
 						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50 whitespace-pre-wrap">
-							{userData.bio || '-'}
+							{userData?.introduction ?? '자기소개 없음'}
 						</p>
 					)}
 				</div>

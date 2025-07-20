@@ -10,9 +10,9 @@ export default function LandingPage() {
 				<div className="container mx-auto px-4 py-4 flex justify-between items-center">
 					<div className="flex items-center space-x-2">
 						<div className="w-8 h-8 rounded-full bg-[#8FD694] flex items-center justify-center">
-							<span className="text-white font-bold">AI</span>
+							<span className="text-white font-bold">Injob</span>
 						</div>
-						<span className="font-bold text-xl">InterviewPro</span>
+						<span className="font-bold text-xl">Injob</span>
 					</div>
 					<div className="flex items-center space-x-4">
 						<Link
