@@ -14,6 +14,9 @@ import { useMemberSession } from '@/components/member-session-context'
 import { useRouter } from 'next/navigation'
 import type { InterviewCardDTO } from '@/apis/types/interview-types'
 import LoadingSpinner from '@/components/loading'
+import { toast } from 'sonner'
+import DeleteDialog from '../profile/components/DeleteDialog'
+import { PREPARE_FOR_DELETE_INTERVIEW } from '@/constant'
 
 export default function InterviewsPage() {
 	const router = useRouter()
@@ -254,6 +257,7 @@ export default function InterviewsPage() {
 											variant="ghost"
 											size="sm"
 											className="text-[#8FD694] hover:text-[#7ac47f]"
+											onClick={() => toast.info(PREPARE_FOR_DELETE_INTERVIEW)}
 										>
 											{`결과 보기`}
 										</Button>
@@ -264,6 +268,15 @@ export default function InterviewsPage() {
 					</div>
 				</div>
 			</CommunityLayout>
+			<DeleteDialog
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+				interview={interviewToDelete}
+				onDeleted={() => {
+					setDeleteDialogOpen(false)
+					setInterviewToDelete(null)
+				}}
+			/>
 		</>
 	)
 }

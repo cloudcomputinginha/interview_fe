@@ -131,3 +131,8 @@ export async function updateInterviewDocuments(
 		UpdateDocumentDTO
 	>(`/interviews/${interviewId}/documents`, data)
 }
+
+// 면접 삭제
+export async function deleteInterview(interviewId: number) {
+	return serverFetch.del(`/interviews/${interviewId}`)
+}

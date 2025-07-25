@@ -11,6 +11,7 @@ import {
 	removeAccessToken,
 	removeRefreshToken,
 } from '../session/token-storage'
+import { toast } from 'sonner'
 
 const baseServerURL = process.env.NEXT_PUBLIC_SERVER_URL
 const baseAIServerURL = process.env.NEXT_PUBLIC_AI_SERVER_URL
@@ -45,7 +46,13 @@ async function fetchWithAuthRetry(
 	if (response.status === 403 && retry) {
 		// 액세스 토큰 만료로 간주
 		const refreshToken = getRefreshToken()
-		if (!refreshToken) throw new Error('로그인 만료')
+		if (!refreshToken) {
+			removeAccessToken()
+			removeRefreshToken()
+			toast.error('로그인이 만료되어, 자동으로 로그아웃 처리됩니다.')
+			window.location.href = '/login'
+			return new Response('Unauthorized', { status: 403 })
+		}
 
 		// 리프레시 토큰으로 새 토큰 요청 (엔드포인트는 예시)
 		const refreshRes = await fetch('/auth/reissue', {

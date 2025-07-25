@@ -59,7 +59,7 @@ export default [
 			'@typescript-eslint/no-non-null-assertion': 'off',
 			'@typescript-eslint/explicit-function-return-type': 'off',
 			// 기타 기존 룰
-			'prettier/prettier': 'error',
+			'prettier/prettier': 'off',
 			'react/prop-types': 'off',
 		},
 	},

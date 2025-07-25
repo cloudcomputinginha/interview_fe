@@ -15,7 +15,6 @@ import { Progress } from '@/components/ui/progress'
 import { useQuery } from '@tanstack/react-query'
 import { getGroupInterviewDetail } from '@/apis/interview'
 import { useRouter } from 'next/navigation'
-import { useMemberSession } from '@/components/member-session-context'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
 import LoadingSpinner from '@/components/loading'
 import { toast } from 'sonner'
@@ -26,7 +25,6 @@ export default function IndividualInterviewWaitingRoomPage({
 	params: Promise<{ id: string }>
 }) {
 	const { id: interviewId } = use(params) as { id: string }
-	const { memberId } = useMemberSession()
 	const [countdown, setCountdown] = useState<{
 		minutes: number
 		seconds: number
