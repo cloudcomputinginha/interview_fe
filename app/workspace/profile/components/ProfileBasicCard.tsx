@@ -80,18 +80,19 @@ export function ProfileBasicCard({
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="email">이메일</Label>
-					{isEditing ? (
+					{/* Post 요청에서 해당 항목은 받고 있지 않아 수정 X */}
+					{/* {isEditing ? (
 						<Input
 							id="email"
 							type="email"
 							value={formData.email}
 							onChange={e => handleInputChange('email', e.target.value)}
 						/>
-					) : (
-						<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
-							{userData?.email ?? '이메일 없음'}
-						</p>
-					)}
+					) : ( */}
+					<p className="text-sm text-gray-700 p-2 border rounded-md bg-gray-50">
+						{userData?.email ?? '이메일 없음'}
+					</p>
+					{/* )} */}
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="phone">전화번호</Label>
