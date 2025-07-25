@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { isNotReady } from '@/utils/isNotReady'
+import { toast } from 'sonner'
+import { PREPARE_FOR_RELEASE } from '@/constant'
 
 export function ProfileAccountCard() {
 	return (
@@ -20,7 +21,11 @@ export function ProfileAccountCard() {
 						계정과 모든 데이터를 영구적으로 삭제합니다.
 					</p>
 				</div>
-				<Button onClick={isNotReady} variant="destructive" size="sm">
+				<Button
+					onClick={() => toast.info(PREPARE_FOR_RELEASE)}
+					variant="destructive"
+					size="sm"
+				>
 					계정 삭제
 				</Button>
 			</div>

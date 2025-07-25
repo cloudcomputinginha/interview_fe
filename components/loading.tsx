@@ -1,7 +1,16 @@
-export default function LoadingSpinner({ infoText }: { infoText?: string }) {
+export default function LoadingSpinner({
+	infoText,
+	size = 12,
+}: {
+	infoText?: string
+	size?: number
+}) {
 	return (
-		<div className="flex flex-col gap-2 justify-center items-center h-screen">
-			<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8FD694] mx-auto mb-4"></div>
+		<div className="flex justify-center items-center h-full">
+			<div
+				className="animate-spin rounded-full border-b-2 border-[#8FD694] mx-auto mb-4 h-full"
+				style={{ height: `${size}px`, width: `${size}px` }}
+			></div>
 			{infoText && <p>{infoText}</p>}
 		</div>
 	)

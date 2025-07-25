@@ -59,6 +59,7 @@ import {
 } from '@/apis/resume'
 import { convertDate } from '@/utils/date/convertDate'
 import { Progress } from '@/components/ui/progress'
+import { toast } from 'sonner'
 
 export default function WorkspacePage() {
 	const [dialogOpen, setDialogOpen] = useState(false)
@@ -160,10 +161,10 @@ export default function WorkspacePage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
 			setDialogOpen(false)
-			alert('자기소개서가 성공적으로 등록되었습니다.')
+			toast.success('자기소개서가 성공적으로 등록되었습니다.')
 		},
 		onError: () => {
-			alert('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
+			toast.error('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
 		},
 	})
 
@@ -201,6 +202,7 @@ export default function WorkspacePage() {
 												createCoverletterMutation.mutate(data)
 											}}
 											onCancel={() => setDialogOpen(false)}
+											isPending={createCoverletterMutation.isPending}
 										/>
 									</div>
 								</DialogContent>

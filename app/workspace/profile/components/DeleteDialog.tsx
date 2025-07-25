@@ -10,8 +10,8 @@ import { deleteInterview } from '@/apis/interview'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useMemberSession } from '@/components/member-session-context'
-import Loading from '../../loading'
-import { PREPARE_FOR_DELETE_INTERVIEW } from '@/constant'
+import Loading from '@/components/loading'
+import { PREPARE_FOR_RELEASE } from '@/constant'
 
 export default function DeleteDialog({
 	open,
@@ -62,7 +62,7 @@ export default function DeleteDialog({
 					</Button>
 					<Button
 						variant="destructive"
-						onClick={() => toast.info(PREPARE_FOR_DELETE_INTERVIEW)}
+						onClick={() => toast.info(PREPARE_FOR_RELEASE)}
 						disabled={isPending}
 					>
 						{isPending ? <Loading /> : '삭제'}

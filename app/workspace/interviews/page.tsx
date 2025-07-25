@@ -16,7 +16,7 @@ import type { InterviewCardDTO } from '@/apis/types/interview-types'
 import LoadingSpinner from '@/components/loading'
 import { toast } from 'sonner'
 import DeleteDialog from '../profile/components/DeleteDialog'
-import { PREPARE_FOR_DELETE_INTERVIEW } from '@/constant'
+import { PREPARE_FOR_RELEASE } from '@/constant'
 
 export default function InterviewsPage() {
 	const router = useRouter()
@@ -75,9 +75,6 @@ export default function InterviewsPage() {
 				{error instanceof Error ? error.message : '에러가 발생했어요.'}
 			</div>
 		)
-
-	// 그룹 면접의 경우
-	// 개인 면접의 경우
 	const upcomingInterviews = interviews.filter(
 		i =>
 			i.interviewOptionPreviewDTO.interviewFormat === 'GROUP' &&
@@ -257,7 +254,7 @@ export default function InterviewsPage() {
 											variant="ghost"
 											size="sm"
 											className="text-[#8FD694] hover:text-[#7ac47f]"
-											onClick={() => toast.info(PREPARE_FOR_DELETE_INTERVIEW)}
+											onClick={() => toast.info(PREPARE_FOR_RELEASE)}
 										>
 											{`결과 보기`}
 										</Button>

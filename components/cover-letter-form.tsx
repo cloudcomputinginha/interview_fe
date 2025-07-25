@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useMemberSession } from '@/components/member-session-context'
+import Loading from '@/components/loading'
 
 interface CoverLetterFormProps {
 	onSubmit: (data: {
@@ -23,12 +24,14 @@ interface CoverLetterFormProps {
 		jobName: string
 		qnaDTOList: { question: string; answer: string }[]
 	}
+	isPending: boolean
 }
 
 export function CoverLetterForm({
 	onSubmit,
 	onCancel,
 	initialData,
+	isPending,
 }: CoverLetterFormProps) {
 	const { memberId } = useMemberSession()
 	const [corporateName, setCorporateName] = useState(
@@ -229,11 +232,18 @@ export function CoverLetterForm({
 					취소
 				</Button>
 				<Button
-					className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
+					className="bg-[#7ac47f] hover:bg-[#7ac47f] text-white flex items-center"
 					onClick={handleSubmit}
-					disabled={!isFormValid()}
+					disabled={!isFormValid() || isPending}
 				>
-					저장
+					{isPending ? (
+						<div
+							className="animate-spin rounded-full border-b-2 border-[#8FD694] h-full"
+							style={{ height: `16px`, width: `16px` }}
+						></div>
+					) : (
+						'저장'
+					)}
 				</Button>
 			</div>
 		</div>
