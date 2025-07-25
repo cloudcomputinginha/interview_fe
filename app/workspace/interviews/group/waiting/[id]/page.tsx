@@ -22,6 +22,7 @@ import { Users, User, Brain } from 'lucide-react'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CheckCircle } from 'lucide-react'
+import LoadingSpinner from '@/components/loading'
 
 export default function InterviewWaitingRoomPage({
 	params,
@@ -44,7 +45,11 @@ export default function InterviewWaitingRoomPage({
 	const router = useRouter()
 	const [formattedStart, setFormattedStart] = useState('-')
 
-	const { data: interview } = useQuery({
+	const {
+		data: interview,
+		isLoading,
+		isError,
+	} = useQuery({
 		queryKey: ['interview', interviewId],
 		queryFn: () => getGroupInterviewDetail(Number(interviewId)),
 		select: data => data.result,
@@ -80,7 +85,6 @@ export default function InterviewWaitingRoomPage({
 				: 0
 
 			if (difference <= 0) {
-				// Time to start the interview
 				if (timerRef.current) {
 					clearInterval(timerRef.current)
 					alert('참가 시간이 지났어요.')
@@ -93,7 +97,7 @@ export default function InterviewWaitingRoomPage({
 			const minutes = Math.floor(difference / (1000 * 60))
 			const seconds = Math.floor((difference % (1000 * 60)) / 1000)
 			setCountdown({ minutes, seconds })
-			const totalWaitTime = 10 * 60 * 1000 // 10 minutes in milliseconds
+			const totalWaitTime = 10 * 60 * 1000
 			const elapsed = totalWaitTime - difference
 			const progressPercentage = Math.min(
 				100,
@@ -103,24 +107,21 @@ export default function InterviewWaitingRoomPage({
 		}
 
 		calculateCountdown()
-		timerRef.current = setInterval(calculateCountdown, 1000) // Update every second
+		timerRef.current = setInterval(calculateCountdown, 1000)
 
 		return () => {
 			if (timerRef.current) {
 				clearInterval(timerRef.current)
 			}
 		}
-	}, [interview?.startedAt]) // 빈 의존성 배열 사용 (컴포넌트 마운트 시 한 번만 실행)
-
+	}, [interview?.startedAt])
 	useEffect(() => {
 		if (interview?.startedAt) {
 			setFormattedStart(new Date(interview.startedAt).toLocaleString('ko-KR'))
 		}
 	}, [interview?.startedAt])
 
-	// 면접 시작 함수 수정
 	const startInterview = useCallback(() => {
-		// 참가자가 없으면 시작 불가
 		if (participants?.length === 0) {
 			alert('참가자가 없어요.')
 			router.replace('/workspace/interviews')
@@ -129,9 +130,7 @@ export default function InterviewWaitingRoomPage({
 
 		setIsStarting(true)
 
-		// Show transition screen for 3 seconds
 		setTimeout(() => {
-			// Redirect to the interview session
 			router.replace('/workspace/interviews/group/session')
 		}, 3000)
 	}, [participants?.length])
@@ -151,7 +150,20 @@ export default function InterviewWaitingRoomPage({
 		}
 	}
 
-	// If the interview is starting, show transition screen
+	if (isLoading) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex gap-2 items-center justify-center">
+				<LoadingSpinner infoText="면접 정보를 불러오는 중이에요..." />
+			</div>
+		)
+	}
+
+	if (isError) {
+		alert('면접 정보를 불러오는 중 오류가 발생했어요.')
+		router.replace('/workspace/interviews')
+		return null
+	}
+
 	if (isStarting) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">

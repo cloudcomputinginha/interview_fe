@@ -24,6 +24,15 @@ export function useProfileForm(initialData: UserProfile) {
 
 	const { mutateAsync: updateMemberInfo } = useMutation({
 		mutationFn: (data: UpdateInfoDTO) => updateBasicInfo(data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['member', memberId] })
+			toast.success('프로필이 성공적으로 저장되었습니다.')
+			setIsEditing(false)
+			setUserData(formData)
+		},
+		onError: (error: any) => {
+			alert(error)
+		},
 	})
 
 	const handleInputChange = (
@@ -43,15 +52,6 @@ export function useProfileForm(initialData: UserProfile) {
 			jobType: formData.jobField,
 			introduction: formData.bio,
 		})
-			.then(() => {
-				queryClient.invalidateQueries({ queryKey: ['member', memberId] })
-				toast.success('프로필이 성공적으로 저장되었습니다.')
-				setIsEditing(false)
-				setUserData(formData)
-			})
-			.catch((error: any) => {
-				alert(error)
-			})
 	}
 
 	const handleCancel = () => {

@@ -17,6 +17,7 @@ import { getGroupInterviewDetail } from '@/apis/interview'
 import { useRouter } from 'next/navigation'
 import { useMemberSession } from '@/components/member-session-context'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
+import LoadingSpinner from '@/components/loading'
 
 export default function IndividualInterviewWaitingRoomPage({
 	params,
@@ -34,7 +35,11 @@ export default function IndividualInterviewWaitingRoomPage({
 	const timerRef = useRef<NodeJS.Timeout | null>(null)
 	const router = useRouter()
 
-	const { data: interview } = useQuery({
+	const {
+		data: interview,
+		isLoading,
+		isError,
+	} = useQuery({
 		queryKey: ['interview', interviewId],
 		queryFn: () => getGroupInterviewDetail(Number(interviewId)),
 		select: data => data.result,
@@ -56,7 +61,6 @@ export default function IndividualInterviewWaitingRoomPage({
 			const minutes = Math.floor(difference / (1000 * 60))
 			const seconds = Math.floor((difference % (1000 * 60)) / 1000)
 			setCountdown({ minutes, seconds })
-			// 10분 기준 진행률
 			const totalWaitTime = 10 * 60 * 1000
 			const elapsed = totalWaitTime - difference
 			const progressPercentage = Math.min(
@@ -85,6 +89,20 @@ export default function IndividualInterviewWaitingRoomPage({
 				router.replace(`/workspace/interviews/session/${interviewId}`)
 			}, 2000)
 		}
+	}
+
+	if (isLoading) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex gap-2 items-center justify-center">
+				<LoadingSpinner infoText="면접 정보를 불러오는 중이에요..." />
+			</div>
+		)
+	}
+
+	if (isError) {
+		alert('면접 정보를 불러오는 중 오류가 발생했어요.')
+		router.replace('/workspace/interviews')
+		return null
 	}
 
 	if (isStarting) {
