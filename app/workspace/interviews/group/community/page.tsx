@@ -18,6 +18,7 @@ import { HeaderWithNotifications } from '@/components/header-with-notifications'
 import { CommunityLayout } from '@/components/community-layout'
 import { getGroupInterviewCards } from '@/apis/interview'
 import { useQuery } from '@tanstack/react-query'
+import LoadingSpinner from '@/components/loading'
 
 export default function InterviewCommunityPage() {
 	const { data, isLoading, error } = useQuery({
@@ -175,7 +176,7 @@ export default function InterviewCommunityPage() {
 					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{isLoading ? (
 							<div className="col-span-full py-12 text-center text-gray-500">
-								로딩 중...
+								<LoadingSpinner />
 							</div>
 						) : error ? (
 							<div className="col-span-full py-12 text-center text-red-500">

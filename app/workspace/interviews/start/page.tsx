@@ -31,42 +31,9 @@ export default function InterviewStartPage() {
 	const wiz = useInterviewWizard()
 	const router = useRouter()
 	const { memberId } = useMemberSession()
-	// wizard 전체에서 이력서/자소서 상태 관리
-	const [resumes, setResumes] = useState<Resume[]>([
-		{
-			id: '1',
-			name: '신입 개발자 이력서.pdf',
-			url: 'https://mock-resume.com/1.pdf',
-		},
-		{
-			id: '2',
-			name: '포트폴리오_2023.pdf',
-			url: 'https://mock-resume.com/2.pdf',
-		},
-		{
-			id: '3',
-			name: '경력기술서_최종.docx',
-			url: 'https://mock-resume.com/3.docx',
-		},
-	])
-	const [coverLetters, setCoverLetters] = useState<CoverLetter[]>([
-		{
-			id: '1',
-			representativeTitle: '삼성전자 SW개발직군 자기소개서',
-			items: [
-				{ title: '성장과정', content: '저는 컴퓨터공학을 전공하며...' },
-				{ title: '지원동기', content: '삼성전자에서 혁신적인 기술 개발에...' },
-			],
-		},
-		{
-			id: '2',
-			representativeTitle: '네이버 백엔드 개발자 자기소개서',
-			items: [
-				{ title: '경험', content: '다양한 웹 서비스를 개발하며...' },
-				{ title: '포부', content: '네이버의 기술력과 함께 성장하고 싶습니다.' },
-			],
-		},
-	])
+
+	const [resumes, setResumes] = useState<Resume[]>([])
+	const [coverLetters, setCoverLetters] = useState<CoverLetter[]>([])
 
 	const stepProps = {
 		form: wiz.form,

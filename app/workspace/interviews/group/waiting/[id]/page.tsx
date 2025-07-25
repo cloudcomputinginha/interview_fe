@@ -42,6 +42,7 @@ export default function InterviewWaitingRoomPage({
 	const [progressValue, setProgressValue] = useState(0)
 	const timerRef = useRef<NodeJS.Timeout | null>(null)
 	const router = useRouter()
+	const [formattedStart, setFormattedStart] = useState('-')
 
 	const { data: interview } = useQuery({
 		queryKey: ['interview', interviewId],
@@ -53,13 +54,6 @@ export default function InterviewWaitingRoomPage({
 	const isHost =
 		interview?.groupInterviewParticipants?.find(p => p.host)?.memberId ===
 		memberId
-
-	// 인터뷰 시간으로 이미 종료된 면접인지, 아닌지 판단하기
-	if (interview?.startedAt && new Date(interview.startedAt) < new Date()) {
-		alert('이미 시작된 면접이거나, 종료된 면접입니다.')
-		router.replace('/workspace/interviews')
-		return
-	}
 
 	useEffect(() => {
 		if (socketError) {
@@ -76,7 +70,6 @@ export default function InterviewWaitingRoomPage({
 		}
 	}, [socketError])
 
-	// Calculate countdown to interview start
 	useEffect(() => {
 		if (!interview?.startedAt) return
 
@@ -90,17 +83,16 @@ export default function InterviewWaitingRoomPage({
 				// Time to start the interview
 				if (timerRef.current) {
 					clearInterval(timerRef.current)
+					alert('참가 시간이 지났어요.')
+					router.replace('/workspace/interviews')
+					return null
 				}
-				startInterview()
 				return
 			}
 
 			const minutes = Math.floor(difference / (1000 * 60))
 			const seconds = Math.floor((difference % (1000 * 60)) / 1000)
 			setCountdown({ minutes, seconds })
-
-			// Calculate progress for the progress bar (inverse)
-			// Assuming the waiting room opens 10 minutes before the interview
 			const totalWaitTime = 10 * 60 * 1000 // 10 minutes in milliseconds
 			const elapsed = totalWaitTime - difference
 			const progressPercentage = Math.min(
@@ -120,12 +112,19 @@ export default function InterviewWaitingRoomPage({
 		}
 	}, [interview?.startedAt]) // 빈 의존성 배열 사용 (컴포넌트 마운트 시 한 번만 실행)
 
+	useEffect(() => {
+		if (interview?.startedAt) {
+			setFormattedStart(new Date(interview.startedAt).toLocaleString('ko-KR'))
+		}
+	}, [interview?.startedAt])
+
 	// 면접 시작 함수 수정
 	const startInterview = useCallback(() => {
 		// 참가자가 없으면 시작 불가
 		if (participants?.length === 0) {
-			alert('참가자가 없어 면접을 시작할 수 없습니다.')
-			return
+			alert('참가자가 없어요.')
+			router.replace('/workspace/interviews')
+			return null
 		}
 
 		setIsStarting(true)
@@ -133,7 +132,7 @@ export default function InterviewWaitingRoomPage({
 		// Show transition screen for 3 seconds
 		setTimeout(() => {
 			// Redirect to the interview session
-			window.location.href = '/workspace/interview/group/session'
+			router.replace('/workspace/interviews/group/session')
 		}, 3000)
 	}, [participants?.length])
 
@@ -150,11 +149,6 @@ export default function InterviewWaitingRoomPage({
 		) {
 			startInterview()
 		}
-	}
-
-	// Format time for display
-	function formatTime(minutes: number, seconds: number) {
-		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 	}
 
 	// If the interview is starting, show transition screen
@@ -234,10 +228,7 @@ export default function InterviewWaitingRoomPage({
 								</div>
 								<div className="flex items-center gap-1 text-gray-400 mb-4">
 									<Clock className="h-3 w-3 mr-1" />
-									시작시간:{' '}
-									{interview?.startedAt
-										? new Date(interview.startedAt).toLocaleString('ko-KR')
-										: '-'}
+									시작시간: {formattedStart}
 								</div>
 								<Progress
 									value={progressValue}

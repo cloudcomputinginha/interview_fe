@@ -60,7 +60,10 @@ export class SocketClient {
 	}
 
 	send(destination: string, body: any) {
-		if (!this.connected) throw new Error('Socket not connected')
+		if (!this.connected) {
+			console.error('Socket not connected')
+			return
+		}
 		this.client.publish({ destination, body: JSON.stringify(body) })
 	}
 

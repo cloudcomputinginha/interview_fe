@@ -61,9 +61,6 @@ import { convertDate } from '@/utils/date/convertDate'
 import { Progress } from '@/components/ui/progress'
 
 export default function WorkspacePage() {
-	const [questionAnswerPairs, setQuestionAnswerPairs] = useState([
-		{ id: 1, question: '', answer: '' },
-	])
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const [searchQuery, setSearchQuery] = useState('')
 	const [typeFilter, setTypeFilter] = useState('all')

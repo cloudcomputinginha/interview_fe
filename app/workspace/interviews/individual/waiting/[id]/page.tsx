@@ -34,7 +34,6 @@ export default function IndividualInterviewWaitingRoomPage({
 	const timerRef = useRef<NodeJS.Timeout | null>(null)
 	const router = useRouter()
 
-	// 임시: getGroupInterviewDetail 재사용 (실제 API 분리 필요)
 	const { data: interview } = useQuery({
 		queryKey: ['interview', interviewId],
 		queryFn: () => getGroupInterviewDetail(Number(interviewId)),
@@ -42,14 +41,6 @@ export default function IndividualInterviewWaitingRoomPage({
 		enabled: !!interviewId,
 	})
 
-	// 이미 시작된 면접인지 체크
-	if (interview?.startedAt && new Date(interview.startedAt) < new Date()) {
-		alert('이미 시작된 면접이거나, 종료된 면접입니다.')
-		router.replace('/workspace/interviews')
-		return
-	}
-
-	// 카운트다운
 	useEffect(() => {
 		if (!interview?.startedAt) return
 		const calculateCountdown = () => {
@@ -81,13 +72,17 @@ export default function IndividualInterviewWaitingRoomPage({
 		}
 	}, [interview?.startedAt])
 
-	// 면접 시작
-	// 사용자한테 바로 시작할건지 물어보는 팝업 띄우기
+	if (interview?.startedAt && new Date(interview.startedAt) < new Date()) {
+		alert('이미 시작된 면접이거나, 종료된 면접입니다.')
+		router.replace('/workspace/interviews')
+		return null
+	}
+
 	const startInterview = () => {
 		if (confirm('면접을 바로 시작하시겠습니까?')) {
 			setIsStarting(true)
 			setTimeout(() => {
-				window.location.href = `/workspace/interviews/session/${interviewId}`
+				router.replace(`/workspace/interviews/session/${interviewId}`)
 			}, 2000)
 		}
 	}
