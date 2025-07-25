@@ -24,7 +24,6 @@ async function preloadAudio(audioPath: string): Promise<string> {
 	return URL.createObjectURL(blob)
 }
 
-// index 기반 key로 audioUrlMap 생성 (이미 프리로드된 오디오는 제외)
 async function preloadAllAudios(
 	qaFlow: QA[],
 	audioUrlMap: Record<string, string>

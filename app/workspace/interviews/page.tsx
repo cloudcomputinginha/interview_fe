@@ -21,11 +21,7 @@ export default function InterviewsPage() {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 	const [interviewToDelete, setInterviewToDelete] = useState<any>(null)
 
-	const {
-		data,
-		isLoading: loading,
-		error: queryError,
-	} = useQuery({
+	const { data, isLoading, isError, error } = useQuery({
 		queryKey: ['myInterviewList', memberId],
 		queryFn: () => getMyInterviewList(memberId!),
 		enabled: !!memberId,
@@ -68,23 +64,26 @@ export default function InterviewsPage() {
 		return new Date(dateString).toLocaleDateString('ko-KR', options)
 	}
 
-	if (loading) return <LoadingSpinner />
-	if (queryError)
+	if (isLoading)
+		return <LoadingSpinner infoText="면접 목록을 불러오는 중이에요" />
+	if (isError)
 		return (
 			<div className="p-6 text-red-500">
-				{queryError instanceof Error ? queryError.message : '에러 발생'}
+				{error instanceof Error ? error.message : '에러가 발생했어요.'}
 			</div>
 		)
 
+	// 그룹 면접의 경우
+	// 개인 면접의 경우
 	const upcomingInterviews = interviews.filter(
 		i =>
-			i.memberInterviewStatusDTO.status === 'SCHEDULED' ||
-			i.memberInterviewStatusDTO.status === 'IN_PROGRESS'
+			i.interviewOptionPreviewDTO.interviewFormat === 'GROUP' &&
+			(i.memberInterviewStatusDTO.status === 'SCHEDULED' ||
+				i.memberInterviewStatusDTO.status === 'IN_PROGRESS') &&
+			new Date(i.myInterviewCardDTO.startedAt) > new Date()
 	)
 	const pastInterviews = interviews.filter(
-		i =>
-			i.memberInterviewStatusDTO.status === 'DONE' ||
-			i.memberInterviewStatusDTO.status === 'NO_SHOW'
+		i => new Date(i.myInterviewCardDTO.startedAt) < new Date()
 	)
 
 	return (
@@ -247,7 +246,7 @@ export default function InterviewsPage() {
 										</div>
 										<div className="flex items-center text-sm text-gray-500">
 											<Calendar className="h-4 w-4 mr-1" />
-											<span>{myInterviewCardDTO.startedAt}</span>
+											<span>{formatDate(myInterviewCardDTO.startedAt)}</span>
 										</div>
 									</CardContent>
 									<CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">

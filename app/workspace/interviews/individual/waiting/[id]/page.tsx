@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation'
 import { useMemberSession } from '@/components/member-session-context'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
 import LoadingSpinner from '@/components/loading'
+import { toast } from 'sonner'
 
 export default function IndividualInterviewWaitingRoomPage({
 	params,
@@ -77,7 +78,7 @@ export default function IndividualInterviewWaitingRoomPage({
 	}, [interview?.startedAt])
 
 	if (interview?.startedAt && new Date(interview.startedAt) < new Date()) {
-		alert('이미 시작된 면접이거나, 종료된 면접입니다.')
+		toast.error('이미 시작된 면접이거나, 종료된 면접입니다.')
 		router.replace('/workspace/interviews')
 		return null
 	}
