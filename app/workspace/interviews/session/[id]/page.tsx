@@ -100,7 +100,7 @@ function InterviewSessionContent({
 		connectWsAsync,
 	} = socketCtx
 
-	const { isAnswering, handleStartAnswering, stopAnswering } =
+	const { isAnswering, handleStartAnswering, stopAnswering, isWsConnected } =
 		useInterviewRealtime()
 
 	useEffect(() => {
@@ -118,6 +118,20 @@ function InterviewSessionContent({
 
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [answerText, setAnswerText] = useState('')
+
+	// WebSocket 연결 상태 모니터링
+	useEffect(() => {
+		if (isAnswering && !isWsConnected) {
+			console.log('WebSocket 연결 끊어짐 감지, 답변 중단')
+			stopAnswering()
+			// 서버 오류인 경우 더 구체적인 메시지
+			setTimeout(() => {
+				alert(
+					'음성 연결이 끊어졌습니다. 서버 문제일 수 있으니 잠시 후 다시 시도해주세요.'
+				)
+			}, 1000) // 1초 후 알림 (재연결 시도 시간 고려)
+		}
+	}, [isAnswering, isWsConnected, stopAnswering])
 
 	useEffect(() => {
 		if (isAnswering && timer === 0 && !isSubmitting) {
@@ -325,10 +339,6 @@ function InterviewSessionContent({
 								<WebcamView />
 							</div>
 						</div>
-						{/* 
-            <Button size="sm" className="ml-2 bg-[#8FD694] text-white" onClick={handlePlayAudio}>
-              질문 읽어주기
-            </Button> */}
 					</div>
 
 					<div className="w-full md:w-80 bg-gray-800 p-4 flex flex-col">
@@ -394,25 +404,66 @@ function InterviewSessionContent({
 						{/* Action Buttons & 녹음/녹화 상태 표시 */}
 						<div className="mt-auto">
 							{!isAnswering ? (
-								<Button
-									className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white"
-									disabled={isFeedbackLoading || isQuestionLoading}
-									onClick={async () => {
-										if (
-											socketCtx.wsRef?.current &&
-											socketCtx.wsRef.current.isConnected()
-										) {
-											handleStartAnswering()
-										} else {
-											await connectWsAsync()
-											handleStartAnswering()
+								<>
+									{/* WebSocket 연결 상태 표시 */}
+									{!isWsConnected && (
+										<div className="mb-2 text-center text-sm text-yellow-400">
+											⚠️ 음성 연결이 끊어졌습니다. 다시 연결 중...
+											<br />
+											<span className="text-xs text-gray-400">
+												음성 연결이 안 되면 텍스트로 답변하실 수 있습니다.
+											</span>
+										</div>
+									)}
+									<Button
+										className={`w-full text-white ${
+											isWsConnected
+												? 'bg-[#8FD694] hover:bg-[#7ac47f]'
+												: 'bg-gray-500 cursor-not-allowed'
+										}`}
+										disabled={
+											isFeedbackLoading || isQuestionLoading || !isWsConnected
 										}
-									}}
-								>
-									답변 시작
-								</Button>
+										onClick={async () => {
+											if (
+												socketCtx.wsRef?.current &&
+												socketCtx.wsRef.current.isConnected()
+											) {
+												handleStartAnswering()
+											} else {
+												try {
+													await connectWsAsync()
+													handleStartAnswering()
+												} catch (error) {
+													console.error('WebSocket 연결 실패:', error)
+													// 서버 오류인 경우 더 구체적인 메시지
+													if (
+														error instanceof Error &&
+														error.message.includes('시간 초과')
+													) {
+														alert(
+															'서버 연결에 문제가 있습니다. 잠시 후 다시 시도하거나 페이지를 새로고침해주세요.'
+														)
+													} else {
+														alert(
+															'음성 연결에 실패했습니다. 페이지를 새로고침해주세요.'
+														)
+													}
+												}
+											}
+										}}
+									>
+										{isWsConnected ? '답변 시작' : '연결 중...'}
+									</Button>
+								</>
 							) : (
 								<>
+									{/* WebSocket 연결 상태 표시 */}
+									{!isWsConnected && (
+										<div className="mb-2 text-center text-sm text-red-400">
+											❌ 음성 연결이 끊어졌습니다
+										</div>
+									)}
 									<div className="mb-2 text-center text-sm text-[#8FD694]">
 										음성 인식 결과 : {voiceAnswerText}
 									</div>

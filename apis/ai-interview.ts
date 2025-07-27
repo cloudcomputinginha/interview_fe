@@ -2,7 +2,7 @@ import { aiFetch } from '../utils/fetch/fetch'
 import type {
 	InterviewSession,
 	QA,
-	InterviewStartResponseDTO,
+	ApiResponseInterviewStartResponseDTO,
 } from './types/interview-types'
 
 export function toCamelCaseQA(raw: any): QA {
@@ -37,14 +37,14 @@ function toCamelCaseInterviewSession(raw: any): InterviewSession {
 export async function generateQuestions(
 	interviewId: string,
 	memberInterviewId: string,
-	payload?: InterviewStartResponseDTO
+	payload?: ApiResponseInterviewStartResponseDTO
 ): Promise<InterviewSession> {
 	const updatedPayload = {
 		...payload,
 		result: {
-			...payload,
+			...payload?.result,
 			interview: {
-				...payload?.interview,
+				...payload?.result?.interview,
 				notice_url:
 					'https://hanabank.incruit.com/hire/viewhire.asp?projectid=113',
 			},

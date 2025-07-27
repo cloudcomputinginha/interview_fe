@@ -163,10 +163,7 @@ export function useInterviewSession(interviewId: string) {
 			}))
 
 			// 세션 생성 또는 조회
-			await handleGenerateOrGetSession(
-				memberInterviewId,
-				interviewDetail.result
-			)
+			await handleGenerateOrGetSession(memberInterviewId, interviewDetail)
 		}
 
 		init()

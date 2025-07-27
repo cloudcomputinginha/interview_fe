@@ -1,9 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
 import { generateQuestions, getSessionById } from '@/apis/ai-interview'
-import { preloadAllAudios } from '@/utils/audio'
 import { InterviewState } from '@/types/interview/interview'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { ApiResponseInterviewStartResponseDTO } from '@/apis/types/interview-types'
 
 interface UseGenerateOrGetSessionProps {
 	interviewId: string
@@ -25,7 +25,7 @@ export function useGenerateOrGetSession({
 			interviewDetail,
 		}: {
 			memberInterviewId: number
-			interviewDetail: any
+			interviewDetail: ApiResponseInterviewStartResponseDTO
 		}) => {
 			return await generateQuestions(
 				interviewId,
@@ -55,7 +55,7 @@ export function useGenerateOrGetSession({
 
 	const handleGenerateOrGetSession = async (
 		memberInterviewId: number,
-		interviewDetail: any
+		interviewDetail: ApiResponseInterviewStartResponseDTO
 	) => {
 		// 기존 세션이 있는지 확인
 		if (interviewState.session?.sessionId) {
