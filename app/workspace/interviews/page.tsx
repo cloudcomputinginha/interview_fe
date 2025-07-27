@@ -12,7 +12,10 @@ import { getMyInterviewList } from '@/apis/interview'
 import { useQuery } from '@tanstack/react-query'
 import { useMemberSession } from '@/components/member-session-context'
 import { useRouter } from 'next/navigation'
-import type { InterviewCardDTO } from '@/apis/types/interview-types'
+import type {
+	InterviewCardDTO,
+	MyInterviewDTO,
+} from '@/apis/types/interview-types'
 import LoadingSpinner from '@/components/loading-full-screen'
 import { toast } from 'sonner'
 import DeleteDialog from '../profile/components/DeleteDialog'
@@ -75,12 +78,25 @@ export default function InterviewsPage() {
 				{error instanceof Error ? error.message : '에러가 발생했어요.'}
 			</div>
 		)
+
+	const isUpcomingIndivdualInterview = (interview: MyInterviewDTO) => {
+		return (
+			interview.interviewOptionPreviewDTO.interviewFormat === 'INDIVIDUAL' &&
+			new Date(interview.myInterviewCardDTO.startedAt) > new Date()
+		)
+	}
+
+	const isUpcomingGroupInterview = (interview: MyInterviewDTO) => {
+		return (
+			interview.interviewOptionPreviewDTO.interviewFormat === 'GROUP' &&
+			(interview.memberInterviewStatusDTO.status === 'SCHEDULED' ||
+				interview.memberInterviewStatusDTO.status === 'IN_PROGRESS') &&
+			new Date(interview.myInterviewCardDTO.startedAt) > new Date()
+		)
+	}
+
 	const upcomingInterviews = interviews.filter(
-		i =>
-			i.interviewOptionPreviewDTO.interviewFormat === 'GROUP' &&
-			(i.memberInterviewStatusDTO.status === 'SCHEDULED' ||
-				i.memberInterviewStatusDTO.status === 'IN_PROGRESS') &&
-			new Date(i.myInterviewCardDTO.startedAt) > new Date()
+		i => isUpcomingIndivdualInterview(i) || isUpcomingGroupInterview(i)
 	)
 	const pastInterviews = interviews.filter(
 		i => new Date(i.myInterviewCardDTO.startedAt) < new Date()

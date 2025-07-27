@@ -4,12 +4,11 @@ import React, { useState, useEffect, useRef, useCallback, use } from 'react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { X, AlertCircle, Loader2 } from 'lucide-react'
-import { useInterviewSession } from '../hooks/use-interview-session'
+import { useInterviewSession } from '../hooks/interview'
 import { AnimatePresence, motion } from 'framer-motion'
-import { RealtimeProvider } from '../hooks/use-interview-realtime'
-import { useInterviewRealtime } from '../hooks/use-interview-realtime'
+import { RealtimeProvider, useInterviewRealtime } from '../hooks/interview'
 import { WebcamView } from './webcam-view'
-import { useInterviewWebSocket } from '../hooks/useInterviewWebSocket'
+import { useInterviewWebSocket } from '../hooks/interview'
 
 export default function InterviewSessionPage({
 	params,
@@ -19,7 +18,7 @@ export default function InterviewSessionPage({
 	const { id: interviewId } = use(params) as { id: string }
 
 	const sessionCtx = useInterviewSession(interviewId)
-	const socketCtx = useInterviewWebSocket(sessionCtx?.session)
+	const socketCtx = useInterviewWebSocket(sessionCtx)
 
 	if (sessionCtx.isLoading) {
 		// 로딩 메시지/애니메이션
@@ -399,7 +398,10 @@ function InterviewSessionContent({
 									className="w-full bg-[#8FD694] hover:bg-[#7ac47f] text-white"
 									disabled={isFeedbackLoading || isQuestionLoading}
 									onClick={async () => {
-										if (wsRef.current && wsRef.current.isConnected()) {
+										if (
+											socketCtx.wsRef?.current &&
+											socketCtx.wsRef.current.isConnected()
+										) {
 											handleStartAnswering()
 										} else {
 											await connectWsAsync()

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { InterviewState } from '@/types/interview/interview'
 import { AIInterviewSocket } from '@/apis/ai-interview-socket'
+import { useInterviewSession } from './useInterviewSession'
 
 const emptyResult = {
 	isStarted: false,
@@ -12,8 +12,10 @@ const emptyResult = {
 	wsRef: null,
 }
 
-export const useInterviewWebSocket = (sessionCtx: InterviewState | null) => {
-	if (!sessionCtx)
+export const useInterviewWebSocket = (
+	sessionCtx: ReturnType<typeof useInterviewSession>
+) => {
+	if (!sessionCtx.session)
 		return {
 			isStarted: false,
 			setIsStarted: () => {},

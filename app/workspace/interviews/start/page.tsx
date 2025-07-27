@@ -1,4 +1,3 @@
-// app/workspace/interview/start/page.tsx
 'use client'
 
 import { ArrowRight } from 'lucide-react'
