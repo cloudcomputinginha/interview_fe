@@ -63,6 +63,7 @@ export default function InterviewSessionPage({
 		<RealtimeProvider
 			wsRef={socketCtx.wsRef ?? null}
 			connectWsAsync={socketCtx.connectWsAsync}
+			wsCloseCode={socketCtx.lastCloseCode}
 		>
 			<InterviewSessionContent sessionCtx={sessionCtx} socketCtx={socketCtx} />
 		</RealtimeProvider>

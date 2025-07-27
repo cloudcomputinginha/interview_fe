@@ -18,6 +18,7 @@ export const useInterviewWebSocket = (
 	const [isStarted, setIsStarted] = useState(false)
 	const [voiceAnswerText, setVoiceAnswerText] = useState('')
 	const [isProcessing, setIsProcessing] = useState(true)
+	const [lastCloseCode, setLastCloseCode] = useState<number | null>(null)
 
 	const wsRef = useRef<AIInterviewSocket | null>(null)
 	const connectionParamsRef = useRef<{
@@ -56,6 +57,13 @@ export const useInterviewWebSocket = (
 				console.log('WebSocket 연결 파라미터 변경, 재연결')
 				wsRef.current?.disconnect()
 				wsRef.current = new AIInterviewSocket()
+
+				// 종료 코드 추적을 위한 핸들러 설정
+				wsRef.current.onClose((code, reason) => {
+					console.log(`WebSocket 종료 코드 추적: ${code} - ${reason}`)
+					setLastCloseCode(code)
+				})
+
 				wsRef.current.connect(
 					newParams.interviewId,
 					newParams.memberInterviewId,
@@ -169,5 +177,6 @@ export const useInterviewWebSocket = (
 		setIsProcessing,
 		connectWsAsync,
 		wsRef,
+		lastCloseCode,
 	}
 }

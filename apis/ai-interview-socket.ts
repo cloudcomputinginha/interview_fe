@@ -4,10 +4,15 @@ export type AIInterviewSocketMessage = {
 }
 
 export type AIInterviewSocketHandler = (data: AIInterviewSocketMessage) => void
+export type AIInterviewSocketCloseHandler = (
+	code: number,
+	reason: string
+) => void
 
 export class AIInterviewSocket {
 	private socket: WebSocket | null = null
 	private handler: AIInterviewSocketHandler | null = null
+	private closeHandler: AIInterviewSocketCloseHandler | null = null
 	private isConnecting = false
 	private reconnectAttempts = 0
 	private maxReconnectAttempts = 3
@@ -70,6 +75,68 @@ export class AIInterviewSocket {
 				wasClean: event.wasClean,
 			})
 
+			// IANA WebSocket Close Code Registry에 따른 상세 에러 메시지
+			const getCloseCodeMessage = (code: number): string => {
+				switch (code) {
+					// 표준 WebSocket 종료 코드
+					case 1000:
+						return '정상 종료 (Normal Closure)'
+					case 1001:
+						return '클라이언트가 떠남 (Going Away)'
+					case 1002:
+						return '프로토콜 오류 (Protocol Error)'
+					case 1003:
+						return '지원하지 않는 데이터 타입 (Unsupported Data)'
+					case 1004:
+						return '예약됨 (Reserved)'
+					case 1005:
+						return '상태 코드 없음 (No Status Received)'
+					case 1006:
+						return '비정상 종료 (Abnormal Closure)'
+					case 1007:
+						return '일관성 없는 데이터 타입 (Invalid frame payload data)'
+					case 1008:
+						return '정책 위반 (Policy Violation)'
+					case 1009:
+						return '메시지가 너무 큼 (Message Too Big)'
+					case 1010:
+						return '클라이언트 확장 필요 (Client Extension Required)'
+					case 1011:
+						return '서버 내부 오류 (Internal Error)'
+					case 1012:
+						return '서비스 재시작 (Service Restart)'
+					case 1013:
+						return '일시적인 조건 (Try Again Later)'
+					case 1014:
+						return '잘못된 게이트웨이 (Bad Gateway)'
+					case 1015:
+						return 'TLS 핸드셰이크 실패 (TLS Handshake)'
+
+					// 확장된 종료 코드 (3000-3999)
+					case 3000:
+						return '인증 실패 (Unauthorized)'
+					case 3003:
+						return '접근 금지 (Forbidden)'
+					case 3008:
+						return '시간 초과 (Timeout)'
+
+					// 알 수 없는 코드
+					default:
+						if (code >= 4000 && code <= 4999) {
+							return `개인용 종료 코드 (Private Use): ${code}`
+						}
+						return `알 수 없는 종료 코드: ${code}`
+				}
+			}
+
+			const errorMessage = getCloseCodeMessage(event.code)
+			console.error(`💥 WebSocket 종료 상세: ${errorMessage}`)
+
+			// 종료 핸들러 호출
+			if (this.closeHandler) {
+				this.closeHandler(event.code, event.reason)
+			}
+
 			// 서버 오류 코드별 처리
 			switch (event.code) {
 				case 1000: // 정상 종료
@@ -81,8 +148,28 @@ export class AIInterviewSocket {
 				case 1006: // 비정상 종료
 					console.error('💥 WebSocket 비정상 종료')
 					break
+				case 1002: // 프로토콜 오류
+					console.error('💥 WebSocket 프로토콜 오류')
+					break
+				case 1008: // 정책 위반
+					console.error('💥 WebSocket 정책 위반')
+					break
+				case 1009: // 메시지가 너무 큼
+					console.error('💥 WebSocket 메시지 크기 초과')
+					break
+				case 3000: // 인증 실패
+					console.error('💥 WebSocket 인증 실패')
+					break
+				case 3003: // 접근 금지
+					console.error('💥 WebSocket 접근 금지')
+					break
+				case 3008: // 시간 초과
+					console.error('💥 WebSocket 시간 초과')
+					break
 				default:
-					console.error(`💥 WebSocket 오류 코드: ${event.code}`)
+					console.error(
+						`💥 WebSocket 오류 코드: ${event.code} - ${errorMessage}`
+					)
 			}
 
 			this.socket = null
@@ -101,6 +188,7 @@ export class AIInterviewSocket {
 				console.log(
 					`🔄 WebSocket 재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts} (${delay}ms 후)`
 				)
+				console.log(`🔄 종료 코드: ${event.code} - ${errorMessage}`)
 				setTimeout(() => {
 					this.connect(
 						interviewId,
@@ -112,6 +200,7 @@ export class AIInterviewSocket {
 				}, delay)
 			} else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
 				console.error('❌ WebSocket 최대 재연결 시도 횟수 초과')
+				console.error(`❌ 최종 종료 코드: ${event.code} - ${errorMessage}`)
 			}
 		}
 
@@ -167,6 +256,10 @@ export class AIInterviewSocket {
 
 	onMessage(handler: AIInterviewSocketHandler) {
 		this.handler = handler
+	}
+
+	onClose(handler: AIInterviewSocketCloseHandler) {
+		this.closeHandler = handler
 	}
 
 	isConnected() {

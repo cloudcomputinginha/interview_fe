@@ -24,16 +24,19 @@ interface RealtimeProviderProps {
 	children: React.ReactNode
 	wsRef: React.MutableRefObject<AIInterviewSocket | null> | null
 	connectWsAsync: () => Promise<unknown>
+	wsCloseCode?: number | null
 }
 export function RealtimeProvider({
 	children,
 	wsRef,
 	connectWsAsync,
+	wsCloseCode,
 }: RealtimeProviderProps) {
 	const [isAnswering, setIsAnswering] = useState(false)
 	const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
 	const [mediaError, setMediaError] = useState<string | null>(null)
 	const [isWsConnected, setIsWsConnected] = useState(false)
+	const [lastCloseCode, setLastCloseCode] = useState<number | null>(null)
 
 	const audioContextRef = useRef<AudioContext | null>(null)
 	const processorRef = useRef<ScriptProcessorNode | AudioWorkletNode | null>(
@@ -74,14 +77,67 @@ export function RealtimeProvider({
 		return () => clearInterval(interval)
 	}, [wsRef])
 
+	// WebSocket 종료 코드별 사용자 메시지 생성
+	const getCloseCodeUserMessage = (code: number): string => {
+		switch (code) {
+			case 1000:
+				return '정상적으로 연결이 종료되었습니다.'
+			case 1001:
+				return '서버가 연결을 종료했습니다.'
+			case 1002:
+				return '프로토콜 오류가 발생했습니다.'
+			case 1003:
+				return '지원하지 않는 데이터 타입입니다.'
+			case 1006:
+				return '연결이 비정상적으로 종료되었습니다.'
+			case 1007:
+				return '데이터 형식에 문제가 있습니다.'
+			case 1008:
+				return '정책 위반으로 연결이 종료되었습니다.'
+			case 1009:
+				return '전송된 메시지가 너무 큽니다.'
+			case 1010:
+				return '클라이언트 확장이 필요합니다.'
+			case 1011:
+				return '서버 내부 오류가 발생했습니다.'
+			case 1012:
+				return '서버가 재시작 중입니다.'
+			case 1013:
+				return '일시적인 문제가 발생했습니다.'
+			case 1014:
+				return '게이트웨이 오류가 발생했습니다.'
+			case 1015:
+				return '보안 연결 설정에 실패했습니다.'
+			case 3000:
+				return '인증에 실패했습니다.'
+			case 3003:
+				return '접근이 금지되었습니다.'
+			case 3008:
+				return '연결 시간이 초과되었습니다.'
+			default:
+				if (code >= 4000 && code <= 4999) {
+					return '개인용 오류 코드가 발생했습니다.'
+				}
+				return `알 수 없는 오류가 발생했습니다. (코드: ${code})`
+		}
+	}
+
 	// WebSocket 연결 끊어짐 시 자동 재연결 시도
 	useEffect(() => {
 		if (!isWsConnected && isAnswering) {
 			console.log('WebSocket 연결 끊어짐, 자동 재연결 시도')
+
+			// 종료 코드에 따른 사용자 메시지 설정
+			if (wsCloseCode) {
+				const userMessage = getCloseCodeUserMessage(wsCloseCode)
+				setMediaError(`연결이 끊어졌습니다: ${userMessage}`)
+			}
+
 			const reconnectTimer = setTimeout(async () => {
 				try {
 					await connectWsAsync()
 					console.log('WebSocket 자동 재연결 성공')
+					setMediaError(null) // 성공 시 에러 메시지 제거
 				} catch (error) {
 					console.error('WebSocket 자동 재연결 실패:', error)
 					// 서버 오류인 경우 사용자에게 알림
@@ -95,7 +151,7 @@ export function RealtimeProvider({
 
 			return () => clearTimeout(reconnectTimer)
 		}
-	}, [isWsConnected, isAnswering, connectWsAsync])
+	}, [isWsConnected, isAnswering, connectWsAsync, wsCloseCode])
 
 	const handleStartAnswering = useCallback(async () => {
 		try {
