@@ -19,7 +19,7 @@ import type { GroupInterviewDetailDTO } from '@/apis/types/interview-types'
 import { useQuery } from '@tanstack/react-query'
 import { useMemberSession } from '@/components/member-session-context'
 import { use as usePromise } from 'react'
-import LoadingSpinner from '@/components/loading'
+import LoadingSpinner from '@/components/loading-full-screen'
 
 export default function InterviewPostDetailPage({
 	params,

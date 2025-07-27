@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react'
 import type { InterviewSession } from '@/apis/types/interview-types'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { useInterviewDetail } from './useInterviewDetail'
 import { InterviewState } from '@/types/interview/interview'
 import { useGenerateFinalReport } from './useGenerateFinalReport'
 import { useSubmitAnswer } from './useSubmitAnswer'
 import { useGenerateOrGetSession } from './useGenerateOrGetSession'
-import { useAudioQueries } from './useAudioQueries'
+import { useAudioPrefetch } from './useAudioPrefetch'
 
 interface UseInterviewSessionResult {
 	session: InterviewSession | null
@@ -29,12 +30,6 @@ interface UseInterviewSessionResult {
 	timer: number
 	setTimer: React.Dispatch<React.SetStateAction<number>>
 	isAudioPreloading: boolean
-	audioProgress: number
-	playAudio: (key: string) => HTMLAudioElement | null
-	loadFollowUpAudios: (questionIdx: number) => Promise<Record<string, string>>
-	isAudioLoaded: (key: string) => boolean
-	isAudioLoading: (key: string) => boolean
-	isQuestionAudioLoaded: (questionIdx: number) => boolean
 }
 
 const readyStatusMessageMap: Record<
@@ -49,7 +44,9 @@ const readyStatusMessageMap: Record<
 	INTERVIEW_FINISHED: '면접이 종료되었어요.',
 }
 
-export function useInterviewSession(interviewId: string) {
+export function useInterviewSession(
+	interviewId: string
+): UseInterviewSessionResult {
 	// 통합된 상태 관리
 	const [interviewState, setInterviewState] = useState<InterviewState>({
 		session: null,
@@ -66,6 +63,9 @@ export function useInterviewSession(interviewId: string) {
 		timer: 120,
 	})
 
+	// audioUrlMap 상태 추가
+	const [audioUrlMap, setAudioUrlMap] = useState<Record<string, string>>({})
+
 	const router = useRouter()
 
 	// 면접 상세 정보 조회
@@ -79,19 +79,27 @@ export function useInterviewSession(interviewId: string) {
 		setInterviewState,
 	})
 
-	// 오디오 프리로딩을 useQueries로 관리
+	// 오디오 프리로딩을 useQuery로 관리
 	const {
-		audioUrlMap,
+		data: audioUrlMapData,
 		isLoading: isAudioLoading,
-		progress: audioProgress,
-		playAudio,
-		loadFollowUpAudios,
-		isAudioLoaded,
-		isAudioLoading: isSpecificAudioLoading,
-		isQuestionAudioLoaded,
-	} = useAudioQueries({
-		qaFlow: interviewState.session?.qaFlow || [],
+		error: audioError,
+	} = useAudioPrefetch({
+		session: interviewState.session,
+		audioUrlMap,
 	})
+
+	// 오디오 데이터가 업데이트되면 상태 업데이트
+	useEffect(() => {
+		if (audioUrlMapData) {
+			setAudioUrlMap(audioUrlMapData)
+			setInterviewState(prev => ({
+				...prev,
+				isAudioPreloading: false,
+				readyStatus: 'INTERVIEW_READY',
+			}))
+		}
+	}, [audioUrlMapData])
 
 	// 오디오 로딩 상태 동기화
 	useEffect(() => {
@@ -101,25 +109,16 @@ export function useInterviewSession(interviewId: string) {
 				isAudioPreloading: true,
 				readyStatus: 'PRELOADING_AUDIO',
 			}))
-		} else if (
-			interviewState.session &&
-			!isAudioLoading &&
-			audioProgress === 1
-		) {
-			setInterviewState(prev => ({
-				...prev,
-				isAudioPreloading: false,
-				readyStatus: 'INTERVIEW_READY',
-			}))
 		}
-	}, [interviewState.session, isAudioLoading, audioProgress])
+	}, [interviewState.session, isAudioLoading])
 
+	// 답변 제출 핸들러
 	const { handleMainAnswerSubmit, handleFollowUpAnswerSubmit } =
 		useSubmitAnswer({
 			interviewState,
 			setInterviewState,
 			audioUrlMap,
-			loadFollowUpAudios,
+			setAudioUrlMap,
 		})
 
 	// 최종 리포트 생성
@@ -221,11 +220,5 @@ export function useInterviewSession(interviewId: string) {
 		timer: interviewState.timer,
 		setTimer,
 		isAudioPreloading: interviewState.isAudioPreloading,
-		audioProgress,
-		playAudio,
-		loadFollowUpAudios,
-		isAudioLoaded,
-		isAudioLoading: isSpecificAudioLoading,
-		isQuestionAudioLoaded,
 	}
 }

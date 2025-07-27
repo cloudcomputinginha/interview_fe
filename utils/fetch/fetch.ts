@@ -1,3 +1,4 @@
+import { reissueToken } from '@/apis'
 import {
 	BadRequestError,
 	NotFoundError,
@@ -53,19 +54,17 @@ async function fetchWithAuthRetry(
 			window.location.href = '/login'
 			return new Response('Unauthorized', { status: 403 })
 		}
-
-		// 리프레시 토큰으로 새 토큰 요청 (엔드포인트는 예시)
-		const refreshRes = await fetch('/auth/reissue', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ refreshToken }),
-		})
-		if (!refreshRes.ok) {
+		const refreshRes = await reissueToken({ refreshToken })
+		if (!refreshRes) {
 			removeAccessToken()
 			removeRefreshToken()
 			throw new Error('토큰 갱신 실패')
 		}
-		const { accessToken: newAt, refreshToken: newRt } = await refreshRes.json()
+		const { accessToken: newAt, refreshToken: newRt } =
+			refreshRes as unknown as {
+				accessToken: string
+				refreshToken: string
+			}
 		setAccessToken(newAt)
 		setRefreshToken(newRt)
 		// 원래 요청을 한 번 더 재시도

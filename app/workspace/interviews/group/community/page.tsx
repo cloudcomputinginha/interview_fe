@@ -18,7 +18,7 @@ import { HeaderWithNotifications } from '@/components/header-with-notifications'
 import { CommunityLayout } from '@/components/community-layout'
 import { getGroupInterviewCards } from '@/apis/interview'
 import { useQuery } from '@tanstack/react-query'
-import LoadingSpinner from '@/components/loading'
+import LoadingSpinner from '@/components/loading-full-screen'
 
 export default function InterviewCommunityPage() {
 	const { data, isLoading, error } = useQuery({

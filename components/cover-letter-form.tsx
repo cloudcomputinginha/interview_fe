@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useMemberSession } from '@/components/member-session-context'
-import Loading from '@/components/loading'
+import Loading from '@/components/loading-full-screen'
 
 interface CoverLetterFormProps {
 	onSubmit: (data: {

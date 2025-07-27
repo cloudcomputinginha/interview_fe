@@ -1,17 +1,11 @@
-export default function LoadingSpinner({
-	infoText,
-	size = 12,
-}: {
-	infoText?: string
-	size?: number
-}) {
+import React from 'react'
+
+type Props = {}
+
+const Loading = (props: Props) => {
 	return (
-		<div className="flex justify-center items-center h-full">
-			<div
-				className="animate-spin rounded-full border-b-2 border-[#8FD694] mx-auto mb-4 h-full"
-				style={{ height: `${size}px`, width: `${size}px` }}
-			></div>
-			{infoText && <p>{infoText}</p>}
-		</div>
+		<div className="animate-spin rounded-full border-b-2 h-8 w-8 border-[#8FD694] mx-auto"></div>
 	)
 }
+
+export default Loading

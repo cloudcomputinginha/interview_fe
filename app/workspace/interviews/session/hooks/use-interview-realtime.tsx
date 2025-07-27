@@ -20,7 +20,7 @@ const RealtimeContext = createContext<RealtimeContextValue | undefined>(
 
 interface RealtimeProviderProps {
 	children: React.ReactNode
-	wsRef: React.MutableRefObject<AIInterviewSocket | null>
+	wsRef: React.MutableRefObject<AIInterviewSocket | null> | null
 	connectWsAsync: () => Promise<unknown>
 }
 export function RealtimeProvider({
@@ -49,7 +49,7 @@ export function RealtimeProvider({
 
 	const handleStartAnswering = useCallback(async () => {
 		try {
-			const ws = wsRef.current
+			const ws = wsRef?.current
 			if (!ws || !ws.isConnected()) {
 				setMediaError('WebSocket이 연결되지 않았습니다.')
 				await connectWsAsync()

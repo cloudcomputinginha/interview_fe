@@ -10,7 +10,7 @@ import { deleteInterview } from '@/apis/interview'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useMemberSession } from '@/components/member-session-context'
-import Loading from '@/components/loading'
+import Loading from '@/components/loading-full-screen'
 import { PREPARE_FOR_RELEASE } from '@/constant'
 
 export default function DeleteDialog({

@@ -22,7 +22,15 @@ import { Users, User, Brain } from 'lucide-react'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CheckCircle } from 'lucide-react'
-import LoadingSpinner from '@/components/loading'
+import LoadingSpinner from '@/components/loading-full-screen'
+import { toast } from 'sonner'
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from '@/components/ui/dialog'
 
 export default function InterviewWaitingRoomPage({
 	params,
@@ -44,6 +52,7 @@ export default function InterviewWaitingRoomPage({
 	const timerRef = useRef<NodeJS.Timeout | null>(null)
 	const router = useRouter()
 	const [formattedStart, setFormattedStart] = useState('-')
+	const [startDialogOpen, setStartDialogOpen] = useState(false)
 
 	const {
 		data: interview,
@@ -123,7 +132,7 @@ export default function InterviewWaitingRoomPage({
 
 	const startInterview = useCallback(() => {
 		if (participants?.length === 0) {
-			alert('참가자가 없어요.')
+			toast.error('참가자가 없어요.')
 			router.replace('/workspace/interviews')
 			return null
 		}
@@ -137,17 +146,10 @@ export default function InterviewWaitingRoomPage({
 
 	const handleEarlyStart = () => {
 		if (!isHost) {
-			alert('면접 호스트만 면접을 시작할 수 있습니다.')
+			toast.error('면접 호스트만 면접을 시작할 수 있습니다.')
 			return
 		}
-
-		if (
-			confirm(
-				'면접을 지금 시작하시겠습니까? 모든 참가자에게 알림이 전송됩니다.'
-			)
-		) {
-			startInterview()
-		}
+		setStartDialogOpen(true)
 	}
 
 	if (isLoading) {
@@ -159,7 +161,7 @@ export default function InterviewWaitingRoomPage({
 	}
 
 	if (isError) {
-		alert('면접 정보를 불러오는 중 오류가 발생했어요.')
+		toast.error('면접 정보를 불러오는 중 오류가 발생했어요.')
 		router.replace('/workspace/interviews')
 		return null
 	}
@@ -343,6 +345,31 @@ export default function InterviewWaitingRoomPage({
 					</CardContent>
 				</Card>
 			</div>
+			<Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>면접 시작</DialogTitle>
+					</DialogHeader>
+					<div>
+						면접을 지금 시작하시겠습니까? <br />
+						모든 참가자에게 알림이 전송됩니다.
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setStartDialogOpen(false)}>
+							취소
+						</Button>
+						<Button
+							className="bg-[#8FD694] hover:bg-[#7ac47f] text-white"
+							onClick={() => {
+								setStartDialogOpen(false)
+								startInterview()
+							}}
+						>
+							확인
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

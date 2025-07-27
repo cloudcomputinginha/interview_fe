@@ -6,16 +6,10 @@ import { Progress } from '@/components/ui/progress'
 import { X, AlertCircle, Loader2 } from 'lucide-react'
 import { useInterviewSession } from '../hooks/use-interview-session'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AIInterviewSocket } from '@/apis/ai-interview-socket'
 import { RealtimeProvider } from '../hooks/use-interview-realtime'
 import { useInterviewRealtime } from '../hooks/use-interview-realtime'
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogFooter,
-} from '@/components/ui/dialog'
 import { WebcamView } from './webcam-view'
+import { useInterviewWebSocket } from '../hooks/useInterviewWebSocket'
 
 export default function InterviewSessionPage({
 	params,
@@ -25,107 +19,7 @@ export default function InterviewSessionPage({
 	const { id: interviewId } = use(params) as { id: string }
 
 	const sessionCtx = useInterviewSession(interviewId)
-
-	const wsRef = useRef<AIInterviewSocket | null>(null)
-
-	const [isStarted, setIsStarted] = useState(false)
-	const [voiceAnswerText, setVoiceAnswerText] = useState('')
-	const [isProcessing, setIsProcessing] = useState(true)
-
-	const connectWs = useCallback(() => {
-		if (!isStarted) return
-		if (
-			sessionCtx.session &&
-			typeof sessionCtx.currentQuestionIdx === 'number' &&
-			typeof sessionCtx.currentFollowUpIdx === 'number'
-		) {
-			wsRef.current = new AIInterviewSocket()
-			wsRef.current.connect(
-				sessionCtx.session.interviewId,
-				sessionCtx.session.memberInterviewId,
-				sessionCtx.currentQuestionIdx,
-				sessionCtx.currentFollowUpIdx,
-				sessionCtx.session.sessionId
-			)
-		}
-	}, [
-		isStarted,
-		sessionCtx.session?.sessionId,
-		sessionCtx.currentQuestionIdx,
-		sessionCtx.currentFollowUpIdx,
-	])
-
-	const connectWsAsync = useCallback(async () => {
-		if (!isStarted) return
-		if (
-			sessionCtx.session &&
-			typeof sessionCtx.currentQuestionIdx === 'number' &&
-			typeof sessionCtx.currentFollowUpIdx === 'number'
-		) {
-			return new Promise((resolve, reject) => {
-				wsRef.current = new AIInterviewSocket()
-				try {
-					if (!sessionCtx.session) throw new Error('session is not found')
-					wsRef.current.connect(
-						sessionCtx.session.interviewId,
-						sessionCtx.session.memberInterviewId,
-						sessionCtx.currentQuestionIdx,
-						sessionCtx.currentFollowUpIdx,
-						sessionCtx.session.sessionId
-					)
-					resolve(true)
-				} catch (e) {
-					reject(e)
-				}
-			})
-		}
-	}, [
-		isStarted,
-		sessionCtx.session,
-		sessionCtx.currentQuestionIdx,
-		sessionCtx.currentFollowUpIdx,
-	])
-
-	useEffect(() => {
-		if (!isStarted) return
-		if (
-			sessionCtx.session &&
-			typeof sessionCtx.currentQuestionIdx === 'number' &&
-			typeof sessionCtx.currentFollowUpIdx === 'number'
-		) {
-			connectWs()
-		}
-	}, [
-		isStarted,
-		sessionCtx.session?.sessionId,
-		sessionCtx.currentQuestionIdx,
-		sessionCtx.currentFollowUpIdx,
-	])
-
-	useEffect(() => {
-		wsRef.current?.onMessage(data => {
-			// 실시간 텍스트 등 처리
-			// 누적 처리 필요
-			if (data.text) {
-				setVoiceAnswerText(prev => prev + data.text)
-				setIsProcessing(false)
-			}
-			if (data.status === 'processing') {
-				setIsProcessing(true)
-			}
-			if (data.status === 'end') {
-				setIsProcessing(false)
-			}
-		})
-		return () => {
-			wsRef.current?.disconnect()
-		}
-	}, [
-		isStarted,
-		sessionCtx.session?.sessionId,
-		sessionCtx.currentQuestionIdx,
-		sessionCtx.currentFollowUpIdx,
-	])
+	const socketCtx = useInterviewWebSocket(sessionCtx?.session)
 
 	if (sessionCtx.isLoading) {
 		// 로딩 메시지/애니메이션
@@ -147,7 +41,7 @@ export default function InterviewSessionPage({
 		)
 	}
 
-	if (!isStarted) {
+	if (!socketCtx.isStarted) {
 		// "면접 시작" 버튼만 노출
 		return (
 			<div className="min-h-screen flex flex-col gap-3 items-center justify-center bg-gray-900 text-white">
@@ -159,7 +53,7 @@ export default function InterviewSessionPage({
 				</div>
 				<Button
 					className="text-sm px-8 py-4 bg-[#8FD694]"
-					onClick={() => setIsStarted(true)}
+					onClick={() => socketCtx.setIsStarted(true)}
 				>
 					면접 시작
 				</Button>
@@ -167,39 +61,24 @@ export default function InterviewSessionPage({
 		)
 	}
 	return (
-		<RealtimeProvider wsRef={wsRef} connectWsAsync={connectWsAsync}>
-			<InterviewSessionContent
-				sessionCtx={sessionCtx}
-				voiceAnswerText={voiceAnswerText}
-				setVoiceAnswerText={setVoiceAnswerText}
-				connectWsAsync={connectWsAsync}
-				wsRef={wsRef}
-				isProcessing={isProcessing}
-				setIsProcessing={setIsProcessing}
-			/>
+		<RealtimeProvider
+			wsRef={socketCtx.wsRef ?? null}
+			connectWsAsync={socketCtx.connectWsAsync}
+		>
+			<InterviewSessionContent sessionCtx={sessionCtx} socketCtx={socketCtx} />
 		</RealtimeProvider>
 	)
 }
 
 function InterviewSessionContent({
 	sessionCtx,
-	voiceAnswerText,
-	setVoiceAnswerText,
-	connectWsAsync,
-	wsRef,
-	isProcessing,
-	setIsProcessing,
+	socketCtx,
 }: {
 	sessionCtx: ReturnType<typeof useInterviewSession>
-	voiceAnswerText: string
-	setVoiceAnswerText: (t: string) => void
-	connectWsAsync: () => Promise<unknown>
-	wsRef: React.RefObject<AIInterviewSocket | null>
-	isProcessing: boolean
-	setIsProcessing: (t: boolean) => void
+	socketCtx: ReturnType<typeof useInterviewWebSocket>
 }) {
 	const {
-		qaFlow,
+		session,
 		currentQuestionIdx,
 		currentFollowUpIdx,
 		isQuestionLoading,
@@ -213,6 +92,14 @@ function InterviewSessionContent({
 		handleFollowUpAnswerSubmit,
 		isAudioPreloading,
 	} = sessionCtx
+
+	const {
+		voiceAnswerText,
+		setVoiceAnswerText,
+		isProcessing,
+		setIsProcessing,
+		connectWsAsync,
+	} = socketCtx
 
 	const { isAnswering, handleStartAnswering, stopAnswering } =
 		useInterviewRealtime()
@@ -232,9 +119,7 @@ function InterviewSessionContent({
 
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [answerText, setAnswerText] = useState('')
-	const [showTooltip, setShowTooltip] = useState(false)
 
-	// 자동 제출 useEffect (timer가 0이 되면 자동 제출)
 	useEffect(() => {
 		if (isAnswering && timer === 0 && !isSubmitting) {
 			handleSubmit()
@@ -284,11 +169,11 @@ function InterviewSessionContent({
 		}
 	}
 
-	const processedQaFlow = qaFlow.map(q => ({
+	const processedQaFlow = session?.qaFlow?.map(q => ({
 		...q,
 		followUps: q.followUps || [],
 	}))
-	const currentQa = processedQaFlow[currentQuestionIdx]
+	const currentQa = processedQaFlow?.[currentQuestionIdx]
 	const isFollowUp = currentFollowUpIdx !== -1
 	const currentQuestionText = isFollowUp
 		? currentQa?.followUps?.[currentFollowUpIdx]?.question
@@ -320,26 +205,14 @@ function InterviewSessionContent({
 		}
 	}, [audioUrl])
 
-	const handlePlayAudio = () => {
-		if (audioUrl) {
-			if (audioRef.current) {
-				audioRef.current.pause()
-				audioRef.current.currentTime = 0
-			}
-			audioRef.current = new window.Audio(audioUrl)
-			audioRef.current.play().catch(e => console.error('오디오 재생 에러:', e))
-		}
-	}
-
 	useEffect(() => {
 		if (isAnswering) {
-			if (wsRef.current === null) {
+			if (socketCtx.wsRef?.current === null) {
 				connectWsAsync()
 			}
 		}
 	}, [isAnswering])
 
-	// 타이머 감소 useEffect (UI 실시간 갱신)
 	useEffect(() => {
 		if (!isAnswering) return
 		if (timer <= 0) return
@@ -426,8 +299,8 @@ function InterviewSessionContent({
 											<span>
 												질문 {questionNumber}/
 												{isFollowUp
-													? currentQa.followUps.length
-													: qaFlow.length}
+													? currentQa?.followUps?.length
+													: session?.qaFlow?.length}
 											</span>
 										</div>
 										<p className="text-lg font-medium">{currentQuestionText}</p>
@@ -464,11 +337,14 @@ function InterviewSessionContent({
 							<div className="flex justify-between items-center mb-2">
 								<span className="text-sm text-gray-400">진행 상황</span>
 								<span className="text-sm font-medium">
-									{currentQuestionIdx + 1}/{qaFlow.length}
+									{currentQuestionIdx + 1}/{session?.qaFlow?.length}
 								</span>
 							</div>
 							<Progress
-								value={((currentQuestionIdx + 1) / qaFlow.length) * 100}
+								value={
+									((currentQuestionIdx + 1) / (session?.qaFlow?.length || 0)) *
+									100
+								}
 								className="h-2 bg-gray-700"
 							/>
 						</div>

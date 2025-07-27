@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getGroupInterviewDetail } from '@/apis/interview'
 import { useRouter } from 'next/navigation'
 import { formatCountdownString } from '@/utils/date/convertAllDate'
-import LoadingSpinner from '@/components/loading'
+import LoadingSpinner from '@/components/loading-full-screen'
 import { toast } from 'sonner'
 
 export default function IndividualInterviewWaitingRoomPage({

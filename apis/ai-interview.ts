@@ -38,7 +38,7 @@ export async function generateQuestions(
 	interviewId: string,
 	memberInterviewId: string,
 	payload?: InterviewStartResponseDTO
-): Promise<InterviewSession | boolean> {
+): Promise<InterviewSession> {
 	const updatedPayload = {
 		...payload,
 		result: {
@@ -54,7 +54,9 @@ export async function generateQuestions(
 		`/interview/${interviewId}/${memberInterviewId}/generate_questions`,
 		updatedPayload
 	)
-	if (typeof res === 'boolean') return res
+	if (typeof res === 'boolean') {
+		throw new Error('세션 생성에 실패했습니다.')
+	}
 	return toCamelCaseInterviewSession(res)
 }
 
@@ -75,12 +77,14 @@ export async function generateFollowUpQuestions(
 	sessionId: string,
 	index: number,
 	payload?: any
-): Promise<InterviewSession | boolean> {
+): Promise<InterviewSession> {
 	const res = await aiFetch.post<any>(
 		`/interview/session/${sessionId}/qa/${index}/generate_follow-ups`,
 		payload
 	)
-	if (typeof res === 'boolean') return res
+	if (typeof res === 'boolean') {
+		throw new Error('후속 질문 생성에 실패했습니다.')
+	}
 	return toCamelCaseInterviewSession(res)
 }
 
@@ -104,12 +108,14 @@ export async function generateFeedback(
 	sessionId: string,
 	index: number,
 	payload?: any
-): Promise<InterviewSession | boolean> {
+): Promise<InterviewSession> {
 	const res = await aiFetch.post<any>(
 		`/interview/session/${sessionId}/qa/${index}/feedback`,
 		payload
 	)
-	if (typeof res === 'boolean') return res
+	if (typeof res === 'boolean') {
+		throw new Error('피드백 생성에 실패했습니다.')
+	}
 	return toCamelCaseInterviewSession(res)
 }
 
@@ -117,12 +123,14 @@ export async function generateFeedback(
 export async function generateFinalReport(
 	sessionId: string,
 	payload?: any
-): Promise<InterviewSession | boolean> {
+): Promise<InterviewSession> {
 	const res = await aiFetch.post<any>(
 		`/interview/session/${sessionId}/report`,
 		payload
 	)
-	if (typeof res === 'boolean') return res
+	if (typeof res === 'boolean') {
+		throw new Error('최종 리포트 생성에 실패했습니다.')
+	}
 	return toCamelCaseInterviewSession(res)
 }
 
