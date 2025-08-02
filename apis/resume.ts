@@ -23,13 +23,11 @@ export async function saveResume(data: ResumeCreateDTO) {
 }
 
 // 이력서 상세 조회
-export async function getResumeDetail(resumeId: number, memberId: number) {
-	return serverFetch.get<ApiResponseResumeDetailDTO>(`/resumes/${resumeId}`, {
-		memberId,
-	})
+export async function getResumeDetail(resumeId: number) {
+	return serverFetch.get<ApiResponseResumeDetailDTO>(`/resumes/${resumeId}`)
 }
 
 // 이력서 리스트 조회
-export async function getResumeList(memberId: number) {
-	return serverFetch.get<ApiResponseResumeListDTO>('/resumes/', { memberId })
+export async function getResumeList() {
+	return serverFetch.get<ApiResponseResumeListDTO>('/resumes')
 }

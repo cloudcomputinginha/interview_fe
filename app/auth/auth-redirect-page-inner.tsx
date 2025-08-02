@@ -27,19 +27,13 @@ export default function AuthRedirectPageInner() {
 		const accessToken = searchParams.get('at')
 		const refreshToken = searchParams.get('rt')
 		if (!accessToken || !refreshToken) {
-			console.error('인증 토큰이 누락되었습니다.')
 			setError('인증 토큰이 누락되었습니다.')
 			return
 		}
 		setAccessToken(accessToken)
 		setRefreshToken(refreshToken)
-
-		if (accessToken && refreshToken) {
-			login()
-		}
+		login()
 		return
-		// 실제 서비스라면 at를 디코드하거나 백엔드에서 memberId를 받아야 함
-		setError('유효하지 않은 토큰입니다.')
 	}, [searchParams, router, login])
 
 	if (error) {

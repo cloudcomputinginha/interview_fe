@@ -54,11 +54,22 @@ async function fetchWithAuthRetry(
 			window.location.href = '/login'
 			return new Response('Unauthorized', { status: 403 })
 		}
-		const refreshRes = await reissueToken({ refreshToken })
-		if (!refreshRes) {
+		let refreshRes
+		try {
+			refreshRes = await reissueToken({ refreshToken })
+			if (!refreshRes) {
+				removeAccessToken()
+				removeRefreshToken()
+				toast.error('로그인이 만료되어, 자동으로 로그아웃 처리됩니다.')
+				window.location.href = '/login'
+				return new Response('Unauthorized', { status: 403 })
+			}
+		} catch (error) {
 			removeAccessToken()
 			removeRefreshToken()
-			throw new Error('토큰 갱신 실패')
+			toast.error('로그인이 만료되어, 자동으로 로그아웃 처리됩니다.')
+			window.location.href = '/login'
+			return new Response('Unauthorized', { status: 403 })
 		}
 		const { accessToken: newAt, refreshToken: newRt } =
 			refreshRes as unknown as {

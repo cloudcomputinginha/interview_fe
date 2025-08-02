@@ -4,7 +4,6 @@ import {
 	UpdateInfoDTO,
 	ApiResponseMemberInfoResponseDTO,
 	TokenReissueRequestDto,
-	ApiResponseTokenReissueResponseDto,
 } from './types/member-types'
 
 // 사용자 프로필 조회
@@ -30,8 +29,20 @@ export async function updateBasicInfo(data: UpdateInfoDTO) {
 
 // 토큰 재발급
 export async function reissueToken(data: TokenReissueRequestDto) {
-	return serverFetch.post<
-		ApiResponseTokenReissueResponseDto,
-		TokenReissueRequestDto
-	>('/auth/reissue', data)
+	const response = await fetch(
+		`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/reissue`,
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(data),
+		}
+	)
+
+	if (!response.ok) {
+		throw new Error('토큰 재발급 실패')
+	}
+
+	return response.json()
 }

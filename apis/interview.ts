@@ -40,13 +40,12 @@ export async function createMemberInterview(
 // 면접 옵션 수정
 export async function updateInterviewOption(
 	interviewId: number,
-	memberId: number,
 	data: InterviewOptionUpdateDTO
 ) {
 	return serverFetch.patch<
 		ApiResponseInterviewOptionUpdateResponseDTO,
-		InterviewOptionUpdateDTO & { memberId: number }
-	>(`/interviews/${interviewId}/option`, { ...data, memberId })
+		InterviewOptionUpdateDTO
+	>(`/interviews/${interviewId}/option`, data)
 }
 
 // 1대다 면접 모집글 리스트 조회
@@ -93,10 +92,8 @@ export async function terminateInterview(
 }
 
 // 내 인터뷰 리스트 조회
-export async function getMyInterviewList(memberId: number) {
-	return serverFetch.get<ApiResponseMyInterviewListDTO>('/mypage/interviews', {
-		memberId,
-	})
+export async function getMyInterviewList() {
+	return serverFetch.get<ApiResponseMyInterviewListDTO>('/mypage/interviews')
 }
 
 // 면접 정보 수정

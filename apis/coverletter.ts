@@ -22,8 +22,6 @@ export async function getCoverletterDetail(coverletterId: number) {
 }
 
 // 내 자기소개서 리스트 조회
-export async function findMyCoverletter(memberId: number) {
-	return serverFetch.get<ApiResponseMyCoverletterListDTO>('/coverletters/me', {
-		memberId,
-	})
+export async function findMyCoverletter() {
+	return serverFetch.get<ApiResponseMyCoverletterListDTO>('/coverletters')
 }
