@@ -7,6 +7,9 @@ import {
 	ApiResponseResumeListDTO,
 } from './types/resume-types'
 
+import { ApiResponseListInterviewGroupCardDTO } from './types/interview-types'
+import { ApiResponseVoid } from './types/common-types'
+
 // presigned url 발급
 export async function getPresignedUploadUrl(fileName: string) {
 	return serverFetch.get<ApiResponsePresignedUploadDTO>('/resumes/upload', {
@@ -30,4 +33,16 @@ export async function getResumeDetail(resumeId: number) {
 // 이력서 리스트 조회
 export async function getResumeList() {
 	return serverFetch.get<ApiResponseResumeListDTO>('/resumes')
+}
+
+// 이력서에 연결된 면접이 있는지 확인
+export async function checkHasConnectedInterview(resumeId: number) {
+	return serverFetch.get<ApiResponseListInterviewGroupCardDTO>(
+		`/resumes/${resumeId}/interviews`
+	)
+}
+
+// 이력서 삭제
+export async function deleteResume(resumeId: number) {
+	return serverFetch.del<ApiResponseVoid>(`/resumes/${resumeId}`)
 }
