@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-interface DeleteConfirmDialogOptions<T> {
+interface DeleteConfirmDialogOptions {
 	mutationFn: (id: number) => Promise<any>
 	onSuccess?: () => void
 	onError?: () => void
@@ -21,9 +21,15 @@ interface DeleteConfirmDialogReturn {
 	handleConfirm: () => void
 	isPending: boolean
 	itemToDelete: { id: number; name: string } | null
+	dialogProps: {
+		title: string
+		description: string | React.ReactNode
+		confirmText: string
+		cancelText: string
+	}
 }
 
-export function useDeleteConfirmDialog<T>({
+export function useDeleteConfirmDialog({
 	mutationFn,
 	onSuccess,
 	onError,
@@ -33,7 +39,7 @@ export function useDeleteConfirmDialog<T>({
 	description,
 	confirmText = '삭제',
 	cancelText = '취소',
-}: DeleteConfirmDialogOptions<T>): DeleteConfirmDialogReturn {
+}: DeleteConfirmDialogOptions): DeleteConfirmDialogReturn {
 	const [isOpen, setIsOpen] = useState(false)
 	const [itemToDelete, setItemToDelete] = useState<{
 		id: number
