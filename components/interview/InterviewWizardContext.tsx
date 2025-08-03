@@ -9,6 +9,7 @@ export interface InterviewWizardState {
 	sessionName: string
 	company: string
 	position: string
+	noticeUrl: string
 
 	// 데이터 선택
 	resumeId: string
@@ -49,6 +50,7 @@ const initialState: InterviewWizardState = {
 	sessionName: '',
 	company: '',
 	position: '',
+	noticeUrl: '',
 	resumeId: '',
 	coverLetterId: '',
 	voiceType: 'female1',
@@ -89,7 +91,7 @@ export function InterviewWizardProvider({ children }: { children: ReactNode }) {
 				return true
 			case 5: // 그룹 면접 설정 (그룹 면접인 경우만)
 				if (state.interviewType === 'group') {
-					return state.visibility !== ''
+					return state.visibility !== 'public'
 				}
 				return true
 			case 6: // 미리보기

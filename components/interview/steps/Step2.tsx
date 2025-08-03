@@ -37,6 +37,8 @@ import {
 	DialogTitle,
 	DialogDescription,
 } from '@/components/ui/dialog'
+import { ApiError } from '@/utils/error/error'
+import { errorToast } from '@/utils/error/errorToast'
 
 interface Props {
 	form: InterviewFormState
@@ -364,7 +366,12 @@ function ResumeUploadDialog({
 			alert('이력서가 성공적으로 업로드되었습니다.')
 		} catch (e: any) {
 			setError(e.message || '업로드 실패')
-			alert('업로드에 실패했습니다. 다시 시도해주세요.')
+			errorToast(
+				new ApiError({
+					code: 'UPLOAD_ERROR',
+					message: e.message || '업로드 실패',
+				})
+			)
 		} finally {
 			setIsUploading(false)
 		}
@@ -428,6 +435,7 @@ function CoverLetterDialog({
 				</DialogHeader>
 				<div className="py-4">
 					<CoverLetterForm
+						isPending={false}
 						onSubmit={data => {
 							createCoverletter({
 								...data,

@@ -67,7 +67,7 @@ export function useSubmitMainAnswer({
 				console.error('오디오 프리로딩 실패:', error)
 			}
 		},
-		onError: (error: any) => {
+		onError: () => {
 			setInterviewState(prev => ({
 				...prev,
 				error: '답변 저장에 실패했습니다.',

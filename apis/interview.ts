@@ -17,6 +17,7 @@ import {
 	UpdateDocumentDTO,
 	ApiResponseMemberInterviewDocumentDTO,
 } from './types/interview-types'
+import { checkEntityInterviewConnections } from '../utils/api-helpers'
 
 // 면접 생성
 export async function createInterview(data: InterviewCreateDTO) {
@@ -133,3 +134,6 @@ export async function updateInterviewDocuments(
 export async function deleteInterview(interviewId: number) {
 	return serverFetch.del(`/interviews/${interviewId}`)
 }
+
+// 엔티티에 연결된 면접 목록 조회 (공통 함수)
+export { checkEntityInterviewConnections }

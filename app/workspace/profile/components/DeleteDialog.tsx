@@ -34,9 +34,6 @@ export default function DeleteDialog({
 			onDeleted()
 			toast.success('면접이 삭제되었습니다.')
 		},
-		onError: () => {
-			toast.error('삭제에 실패했어요.')
-		},
 	})
 
 	if (!interview) return null

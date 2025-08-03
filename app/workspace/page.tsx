@@ -26,6 +26,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog'
+import { DeleteConfirmDialog } from '@/components/interview/dialog/common/delete-confirm-dialog'
+import { useDeleteConfirmWithInterviewCheck } from '@/hooks/useDeleteConfirmWithInterviewCheck'
 import { CoverLetterForm } from '@/components/cover-letter-form'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -50,16 +52,15 @@ import {
 	findMyCoverletter,
 	createCoverletter,
 	getCoverletterDetail,
+	deleteCoverletter,
 } from '@/apis/coverletter'
-import {
-	getResumeList,
-	getResumeDetail,
-	getPresignedUploadUrl,
-	saveResume,
-} from '@/apis/resume'
+import { getResumeList, getResumeDetail, deleteResume } from '@/apis/resume'
 import { convertDate } from '@/utils/date/convertDate'
-import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
+import Loading from '@/components/loading'
+import { ResumeUploadDialog } from '@/components/interview/dialog/ResumeUploadDialog'
+import { CoverLetterDetailViewDialog } from '@/components/interview/dialog/CoverLetterDetailViewDialog'
+import { ResumeDetailViewDialog } from '@/components/interview/dialog/ResumeDetailViewDialog'
 
 export default function WorkspacePage() {
 	const [dialogOpen, setDialogOpen] = useState(false)
@@ -72,6 +73,7 @@ export default function WorkspacePage() {
 	const [detailResumeDialogOpen, setDetailResumeDialogOpen] = useState(false)
 	const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null)
 	const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
+	const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
 	const { memberId } = useMemberSession()
 	const queryClient = useQueryClient()
 
@@ -79,7 +81,7 @@ export default function WorkspacePage() {
 	const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery(
 		{
 			queryKey: ['coverLetterList', memberId],
-			queryFn: () => findMyCoverletter(memberId!),
+			queryFn: () => findMyCoverletter(),
 			enabled: !!memberId,
 			select: data => {
 				const coverLetters = data.result?.coverletters
@@ -99,7 +101,7 @@ export default function WorkspacePage() {
 	// 이력서 리스트 가져오기 (동기 select)
 	const { data: resumeList, isLoading: resumeListLoading } = useQuery({
 		queryKey: ['resumeList', memberId],
-		queryFn: () => getResumeList(memberId!),
+		queryFn: () => getResumeList(),
 		enabled: !!memberId,
 		select: data => data.result?.resumes ?? [],
 	})
@@ -112,7 +114,7 @@ export default function WorkspacePage() {
 	const resumeDetailsQueries = useQueries({
 		queries: resumeIds.map(resumeId => ({
 			queryKey: ['resumeDetail', resumeId, memberId],
-			queryFn: () => getResumeDetail(resumeId, memberId!),
+			queryFn: () => getResumeDetail(resumeId),
 			enabled: !!resumeId && !!memberId,
 			select: (res: any) => res.result,
 		})),
@@ -163,10 +165,42 @@ export default function WorkspacePage() {
 			setDialogOpen(false)
 			toast.success('자기소개서가 성공적으로 등록되었습니다.')
 		},
-		onError: () => {
-			toast.error('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
-		},
 	})
+
+	// 이력서 삭제 확인 훅
+	const resumeDeleteDialog = useDeleteConfirmWithInterviewCheck({
+		mutationFn: deleteResume,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['resumeList', memberId] })
+		},
+		successMessage: '이력서가 삭제되었습니다.',
+		errorMessage: '이력서 삭제에 실패했습니다.',
+		itemType: 'resume',
+	})
+
+	// 자기소개서 삭제 확인 훅
+	const coverletterDeleteDialog = useDeleteConfirmWithInterviewCheck({
+		mutationFn: deleteCoverletter,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
+		},
+		successMessage: '자기소개서가 삭제되었습니다.',
+		errorMessage: '자기소개서 삭제에 실패했습니다.',
+		itemType: 'coverletter',
+	})
+
+	const handleDeleteClick = (doc: {
+		id: number
+		type: 'resume' | 'manual'
+		name: string
+	}) => {
+		if (doc.type === 'resume') {
+			resumeDeleteDialog.openDialog({ id: doc.id, name: doc.name })
+		} else {
+			coverletterDeleteDialog.openDialog({ id: doc.id, name: doc.name })
+		}
+		setOpenDropdownId(null)
+	}
 
 	if (!memberId) return null
 
@@ -217,7 +251,6 @@ export default function WorkspacePage() {
 						</div>
 					</div>
 
-					{/* Search and Filters */}
 					<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
 						<div className="flex flex-col md:flex-row gap-4">
 							<div className="relative flex-1">
@@ -250,7 +283,11 @@ export default function WorkspacePage() {
 
 					{/* Documents Grid */}
 					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-						{filteredDocuments && filteredDocuments?.length > 0 ? (
+						{coverLetterListLoading || resumeListLoading ? (
+							<div className="col-span-full py-12 text-center text-gray-500">
+								<Loading />
+							</div>
+						) : filteredDocuments && filteredDocuments?.length > 0 ? (
 							filteredDocuments?.map(doc => (
 								<Card
 									key={`${doc.type}-${doc.id}`}
@@ -293,12 +330,22 @@ export default function WorkspacePage() {
 										</div>
 									</CardContent>
 									<CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">
-										<DropdownMenu>
+										<DropdownMenu
+											open={openDropdownId === doc.id}
+											onOpenChange={open => {
+												setOpenDropdownId(open && doc.id ? doc.id : null)
+											}}
+										>
 											<DropdownMenuTrigger asChild>
 												<Button
 													variant="ghost"
 													size="sm"
 													className="h-8 w-8 p-0"
+													onClick={() => {
+														setOpenDropdownId(
+															openDropdownId === doc.id ? null : doc.id || null
+														)
+													}}
 												>
 													<MoreVertical className="h-4 w-4" />
 												</Button>
@@ -320,6 +367,7 @@ export default function WorkspacePage() {
 																setSelectedCoverLetterId(doc.id!)
 																setDetailDialogOpen(true)
 															}
+															setOpenDropdownId(null)
 														}}
 													>
 														<FileText className="mr-2 h-4 w-4" />
@@ -328,18 +376,25 @@ export default function WorkspacePage() {
 												)}
 												<DropdownMenuItem
 													className="flex items-center"
-													onClick={() =>
-														alert('아직 지원하지 않는 기능입니다.')
-													}
+													onClick={() => {
+														toast.info('아직 지원하지 않는 기능입니다.')
+														setOpenDropdownId(null)
+													}}
 												>
 													<Edit className="mr-2 h-4 w-4" />
 													<span>수정</span>
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													className="flex items-center text-red-600"
-													onClick={() =>
-														alert('아직 지원하지 않는 기능입니다.')
-													}
+													onClick={() => {
+														if (doc.id && doc.name) {
+															handleDeleteClick({
+																id: doc.id,
+																type: doc.type as 'resume' | 'manual',
+																name: doc.name,
+															})
+														}
+													}}
 												>
 													<Trash2 className="mr-2 h-4 w-4" />
 													<span>삭제</span>
@@ -370,229 +425,38 @@ export default function WorkspacePage() {
 					</div>
 				</div>
 			</CommunityLayout>
-			<Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-				<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>자기소개서 상세보기</DialogTitle>
-					</DialogHeader>
-					<div className="py-4">
-						{selectedCoverLetterId ? (
-							<CoverLetterDetailView coverletterId={selectedCoverLetterId} />
-						) : null}
-					</div>
-				</DialogContent>
-			</Dialog>
-			<Dialog
-				open={detailResumeDialogOpen}
-				onOpenChange={setDetailResumeDialogOpen}
-			>
-				<DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle className="mb-2">이력서 상세보기</DialogTitle>
-						<DialogDescription>
-							추후 미리보기를 지원할 예정입니다.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="py-4">
-						{selectedResumeId ? (
-							<ResumeDetailView
-								resumeId={selectedResumeId}
-								memberId={memberId!}
-							/>
-						) : null}
-					</div>
-				</DialogContent>
-			</Dialog>
-			<Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
-				<DialogContent className="sm:max-w-[500px]">
-					<DialogHeader>
-						<DialogTitle>이력서 업로드</DialogTitle>
-						<DialogDescription>PDF 파일을 업로드하세요.</DialogDescription>
-					</DialogHeader>
-					<ResumeUploadDialog
-						memberId={memberId!}
-						onSuccess={() => {
-							setResumeDialogOpen(false)
-							queryClient.invalidateQueries({
-								queryKey: ['resumeList', memberId],
-							})
-						}}
-						onCancel={() => setResumeDialogOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
-		</>
-	)
-}
-
-function CoverLetterDetailView({ coverletterId }: { coverletterId: number }) {
-	const { data, isLoading, isError } = useQuery({
-		queryKey: ['coverletterDetail', coverletterId],
-		queryFn: () => getCoverletterDetail(coverletterId),
-		enabled: !!coverletterId,
-		select: res => res.result,
-	})
-
-	if (isLoading) return <div>불러오는 중...</div>
-	if (isError || !data) return <div>불러오기 실패</div>
-
-	return (
-		<Card>
-			<CardContent className="pt-6">
-				<h2 className="text-xl font-bold mb-2">
-					{data.corporateName} - {data.jobName}
-				</h2>
-				<div className="text-sm text-gray-500 mb-4">
-					생성일:{' '}
-					{data.createdAt ? new Date(data.createdAt).toLocaleString() : '-'}
-				</div>
-				{data.qnaList && data.qnaList.length > 0 ? (
-					data.qnaList.map((qna, idx) => (
-						<div key={idx} className="mb-6">
-							<h3 className="font-medium text-lg mb-2">{qna.question}</h3>
-							<p className="text-gray-700 whitespace-pre-line">{qna.answer}</p>
-						</div>
-					))
-				) : (
-					<div>질문/답변이 없습니다.</div>
-				)}
-			</CardContent>
-		</Card>
-	)
-}
-
-function ResumeDetailView({
-	resumeId,
-	memberId,
-}: {
-	resumeId: number
-	memberId: number
-}) {
-	const { data, isLoading, isError } = useQuery({
-		queryKey: ['resumeDetail', resumeId],
-		queryFn: () => getResumeDetail(resumeId, memberId),
-		enabled: !!resumeId && !!memberId,
-		select: res => res.result,
-	})
-
-	if (isLoading) return <div>불러오는 중...</div>
-	if (isError || !data) return <div>불러오기 실패</div>
-
-	return (
-		<Card>
-			<CardContent className="pt-6">
-				<h2 className="text-xl font-bold mb-2">{data.fileName}</h2>
-				<div className="text-sm text-gray-500 mb-2">
-					업로드일:{' '}
-					{data.createdAt ? new Date(data.createdAt).toLocaleString() : '-'}
-				</div>
-				<div className="text-sm text-gray-500 mb-2">
-					파일 크기:{' '}
-					{data.fileSize ? `${(data.fileSize / 1024).toFixed(1)}KB` : '-'}
-				</div>
-				{data.fileUrl && (
-					<a
-						href={data.fileUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-blue-600 underline"
-					>
-						다운로드
-					</a>
-				)}
-			</CardContent>
-		</Card>
-	)
-}
-
-function ResumeUploadDialog({
-	memberId,
-	onSuccess,
-	onCancel,
-}: {
-	memberId: number
-	onSuccess: () => void
-	onCancel: () => void
-}) {
-	const [file, setFile] = useState<File | null>(null)
-	const [progress, setProgress] = useState(0)
-	const [isUploading, setIsUploading] = useState(false)
-	const [error, setError] = useState<string | null>(null)
-
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files && e.target.files[0]) {
-			setFile(e.target.files[0])
-			setError(null)
-		}
-	}
-
-	const handleUpload = async () => {
-		if (!file) return
-		setIsUploading(true)
-		setProgress(0)
-		setError(null)
-		try {
-			// 1. presigned url 발급
-			const presigned = await getPresignedUploadUrl(file.name)
-			const { presignedUrl, fileUrl } = presigned.result!
-			// 2. S3 업로드
-			await new Promise<void>((resolve, reject) => {
-				const xhr = new XMLHttpRequest()
-				xhr.open('PUT', presignedUrl!, true)
-				xhr.upload.onprogress = event => {
-					if (event.lengthComputable) {
-						setProgress(Math.round((event.loaded / event.total) * 100))
-					}
-				}
-				xhr.onload = () => {
-					if (xhr.status === 200) resolve()
-					else reject(new Error('S3 업로드 실패'))
-				}
-				xhr.onerror = () => reject(new Error('S3 업로드 실패'))
-				xhr.setRequestHeader('Content-Type', file.type)
-				xhr.send(file)
-			})
-			// 3. 메타데이터 저장
-			await saveResume({
-				memberId,
-				fileName: file.name,
-				fileUrl: fileUrl!,
-				fileSize: file.size,
-			})
-			setProgress(100)
-			onSuccess()
-			alert('이력서가 성공적으로 업로드되었습니다.')
-		} catch (e: any) {
-			console.error(e)
-			setError(e.message || '업로드 실패')
-			alert('업로드에 실패했습니다. 다시 시도해주세요.')
-		} finally {
-			setIsUploading(false)
-		}
-	}
-
-	return (
-		<div className="space-y-4">
-			<Input
-				type="file"
-				accept="application/pdf"
-				onChange={handleFileChange}
-				disabled={isUploading}
+			<CoverLetterDetailViewDialog
+				detailDialogOpen={detailDialogOpen}
+				setDetailDialogOpen={setDetailDialogOpen}
+				selectedCoverLetterId={selectedCoverLetterId!}
 			/>
-			{progress > 0 && <Progress value={progress} />}
-			{error && <div className="text-red-500 text-sm">{error}</div>}
-			<div className="flex justify-end gap-2">
-				<Button variant="outline" onClick={onCancel} disabled={isUploading}>
-					취소
-				</Button>
-				<Button
-					onClick={handleUpload}
-					disabled={!file || isUploading}
-					className="bg-[#8FD694] text-white"
-				>
-					{isUploading ? '업로드 중...' : '업로드'}
-				</Button>
-			</div>
-		</div>
+			<ResumeDetailViewDialog
+				detailResumeDialogOpen={detailResumeDialogOpen}
+				setDetailResumeDialogOpen={setDetailResumeDialogOpen}
+				selectedResumeId={selectedResumeId!}
+				memberId={memberId!}
+			/>
+			<ResumeUploadDialog
+				resumeDialogOpen={resumeDialogOpen}
+				setResumeDialogOpen={setResumeDialogOpen}
+				memberId={memberId!}
+			/>
+			<DeleteConfirmDialog
+				isOpen={resumeDeleteDialog.isOpen}
+				onOpenChange={resumeDeleteDialog.closeDialog}
+				title={resumeDeleteDialog.title}
+				description={resumeDeleteDialog.description}
+				onConfirm={resumeDeleteDialog.handleConfirm}
+				isPending={resumeDeleteDialog.isPending}
+			/>
+			<DeleteConfirmDialog
+				isOpen={coverletterDeleteDialog.isOpen}
+				onOpenChange={coverletterDeleteDialog.closeDialog}
+				title={coverletterDeleteDialog.title}
+				description={coverletterDeleteDialog.description}
+				onConfirm={coverletterDeleteDialog.handleConfirm}
+				isPending={coverletterDeleteDialog.isPending}
+			/>
+		</>
 	)
 }

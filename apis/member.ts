@@ -46,3 +46,8 @@ export async function reissueToken(data: TokenReissueRequestDto) {
 
 	return response.json()
 }
+
+// 계정 탈퇴
+export async function deleteAccount() {
+	return serverFetch.del('/members')
+}

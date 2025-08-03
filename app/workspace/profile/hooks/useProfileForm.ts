@@ -30,9 +30,6 @@ export function useProfileForm(initialData: UserProfile) {
 			setIsEditing(false)
 			setUserData(formData)
 		},
-		onError: (error: any) => {
-			alert(error)
-		},
 	})
 
 	const handleInputChange = (

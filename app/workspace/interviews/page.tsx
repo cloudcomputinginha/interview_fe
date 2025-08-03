@@ -29,7 +29,7 @@ export default function InterviewsPage() {
 
 	const { data, isLoading, isError, error } = useQuery({
 		queryKey: ['myInterviewList', memberId],
-		queryFn: () => getMyInterviewList(memberId!),
+		queryFn: () => getMyInterviewList(),
 		enabled: !!memberId,
 		select: res => res.result.myInterviews,
 	})

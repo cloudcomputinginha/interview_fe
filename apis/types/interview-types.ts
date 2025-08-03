@@ -27,6 +27,7 @@ export interface InterviewCreateDTO {
 	coverLetterId: number
 	coverLetterTitle?: string
 	inviteEmailDTOList?: InviteEmailDTO[]
+	noticeUrl?: string
 }
 
 export interface InviteEmailDTO {
@@ -180,6 +181,7 @@ export interface GroupInterviewDetailDTO {
 	maxParticipants?: number
 	currentParticipants?: number
 	startedAt?: string
+	noticeUrl?: string
 	hostName?: string
 	groupInterviewParticipants?: GroupInterviewParticipantDTO[]
 }
@@ -210,6 +212,7 @@ export interface InterviewDTO {
 	interviewId?: number
 	corporateName?: string
 	jobName?: string
+	noticeUrl?: string
 	startType?: 'NOW' | 'SCHEDULED'
 	participantCount?: number
 }
