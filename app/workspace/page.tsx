@@ -26,6 +26,18 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import Loading from '@/components/loading'
 import { CoverLetterForm } from '@/components/cover-letter-form'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -50,12 +62,14 @@ import {
 	findMyCoverletter,
 	createCoverletter,
 	getCoverletterDetail,
+	deleteCoverletter,
 } from '@/apis/coverletter'
 import {
 	getResumeList,
 	getResumeDetail,
 	getPresignedUploadUrl,
 	saveResume,
+	deleteResume,
 } from '@/apis/resume'
 import { convertDate } from '@/utils/date/convertDate'
 import { Progress } from '@/components/ui/progress'
@@ -72,6 +86,13 @@ export default function WorkspacePage() {
 	const [detailResumeDialogOpen, setDetailResumeDialogOpen] = useState(false)
 	const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null)
 	const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+	const [documentToDelete, setDocumentToDelete] = useState<{
+		id: number
+		type: 'resume' | 'manual'
+		name: string
+	} | null>(null)
+	const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
 	const { memberId } = useMemberSession()
 	const queryClient = useQueryClient()
 
@@ -79,7 +100,7 @@ export default function WorkspacePage() {
 	const { data: coverLetterList, isLoading: coverLetterListLoading } = useQuery(
 		{
 			queryKey: ['coverLetterList', memberId],
-			queryFn: () => findMyCoverletter(memberId!),
+			queryFn: () => findMyCoverletter(),
 			enabled: !!memberId,
 			select: data => {
 				const coverLetters = data.result?.coverletters
@@ -99,7 +120,7 @@ export default function WorkspacePage() {
 	// 이력서 리스트 가져오기 (동기 select)
 	const { data: resumeList, isLoading: resumeListLoading } = useQuery({
 		queryKey: ['resumeList', memberId],
-		queryFn: () => getResumeList(memberId!),
+		queryFn: () => getResumeList(),
 		enabled: !!memberId,
 		select: data => data.result?.resumes ?? [],
 	})
@@ -112,7 +133,7 @@ export default function WorkspacePage() {
 	const resumeDetailsQueries = useQueries({
 		queries: resumeIds.map(resumeId => ({
 			queryKey: ['resumeDetail', resumeId, memberId],
-			queryFn: () => getResumeDetail(resumeId, memberId!),
+			queryFn: () => getResumeDetail(resumeId),
 			enabled: !!resumeId && !!memberId,
 			select: (res: any) => res.result,
 		})),
@@ -167,6 +188,52 @@ export default function WorkspacePage() {
 			toast.error('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
 		},
 	})
+
+	const deleteCoverletterMutation = useMutation({
+		mutationFn: (coverletterId: number) => deleteCoverletter(coverletterId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
+			setDeleteDialogOpen(false)
+			setDocumentToDelete(null)
+			toast.success('자기소개서가 삭제되었습니다.')
+		},
+		onError: () => {
+			toast.error('자기소개서 삭제에 실패했습니다.')
+		},
+	})
+
+	const deleteResumeMutation = useMutation({
+		mutationFn: (resumeId: number) => deleteResume(resumeId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['resumeList', memberId] })
+			setDeleteDialogOpen(false)
+			setDocumentToDelete(null)
+			toast.success('이력서가 삭제되었습니다.')
+		},
+		onError: () => {
+			toast.error('이력서 삭제에 실패했습니다.')
+		},
+	})
+
+	const handleDeleteClick = (doc: {
+		id: number
+		type: 'resume' | 'manual'
+		name: string
+	}) => {
+		setDocumentToDelete(doc)
+		setDeleteDialogOpen(true)
+		setOpenDropdownId(null) // 드롭다운 닫기
+	}
+
+	const handleConfirmDelete = () => {
+		if (!documentToDelete) return
+
+		if (documentToDelete.type === 'resume') {
+			deleteResumeMutation.mutate(documentToDelete.id)
+		} else {
+			deleteCoverletterMutation.mutate(documentToDelete.id)
+		}
+	}
 
 	if (!memberId) return null
 
@@ -337,9 +404,15 @@ export default function WorkspacePage() {
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													className="flex items-center text-red-600"
-													onClick={() =>
-														alert('아직 지원하지 않는 기능입니다.')
-													}
+													onClick={() => {
+														if (doc.id && doc.name) {
+															handleDeleteClick({
+																id: doc.id,
+																type: doc.type as 'resume' | 'manual',
+																name: doc.name,
+															})
+														}
+													}}
 												>
 													<Trash2 className="mr-2 h-4 w-4" />
 													<span>삭제</span>
@@ -421,6 +494,35 @@ export default function WorkspacePage() {
 					/>
 				</DialogContent>
 			</Dialog>
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+						<AlertDialogDescription>
+							"{documentToDelete?.name}" 문서를 삭제하시겠습니까? 이 작업은
+							되돌릴 수 없습니다.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>취소</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmDelete}
+							disabled={
+								deleteResumeMutation.isPending ||
+								deleteCoverletterMutation.isPending
+							}
+							className="bg-red-600 hover:bg-red-700"
+						>
+							{deleteResumeMutation.isPending ||
+							deleteCoverletterMutation.isPending ? (
+								<Loading variant="danger" />
+							) : (
+								'삭제'
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	)
 }
