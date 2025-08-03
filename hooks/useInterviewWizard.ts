@@ -57,8 +57,6 @@ export function useInterviewWizard() {
 				console.error('[면접 생성 성공 but ID 없음]', data)
 			}
 		},
-		onError: () =>
-			alert('면접 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
 	})
 
 	const validate = (): boolean => {

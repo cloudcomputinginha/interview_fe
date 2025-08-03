@@ -8,7 +8,7 @@ import {
 	removeRefreshToken,
 } from '../session/token-storage'
 import { toast } from 'sonner'
-import { ApiError } from '../error/error'
+import { ApiError } from '@/utils/error/error'
 
 const baseServerURL = process.env.NEXT_PUBLIC_SERVER_URL
 const baseAIServerURL = process.env.NEXT_PUBLIC_AI_SERVER_URL

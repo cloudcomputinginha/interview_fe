@@ -8,6 +8,8 @@ import { useGenerateFinalReport } from './useGenerateFinalReport'
 import { useSubmitAnswer } from './useSubmitAnswer'
 import { useGenerateOrGetSession } from './useGenerateOrGetSession'
 import { useAudioQueries } from './useAudioQueries'
+import { ApiError } from '@/utils/error/error'
+import { errorToast } from '@/utils/error/errorToast'
 
 interface UseInterviewSessionResult {
 	session: InterviewSession | null
@@ -141,9 +143,13 @@ export function useInterviewSession(interviewId: string) {
 			}
 
 			if (!interviewDetail) {
-				toast.error('면접 정보를 불러오지 못했습니다.', {
-					description: interviewDetailError?.message,
-				})
+				if (interviewDetailError instanceof ApiError) {
+					errorToast(interviewDetailError)
+				} else {
+					toast.error('면접 정보를 불러오지 못했습니다.', {
+						description: interviewDetailError?.message,
+					})
+				}
 				router.replace('/workspace/interviews')
 				return
 			}

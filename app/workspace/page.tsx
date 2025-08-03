@@ -165,9 +165,6 @@ export default function WorkspacePage() {
 			setDialogOpen(false)
 			toast.success('자기소개서가 성공적으로 등록되었습니다.')
 		},
-		onError: () => {
-			toast.error('자기소개서 등록에 실패했습니다. 다시 시도해주세요.')
-		},
 	})
 
 	// 이력서 삭제 확인 훅

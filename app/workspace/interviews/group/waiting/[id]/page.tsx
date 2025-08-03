@@ -31,6 +31,8 @@ import {
 	DialogTitle,
 	DialogFooter,
 } from '@/components/ui/dialog'
+import { ApiError } from '@/utils/error/error'
+import { errorToast } from '@/utils/error/errorToast'
 
 export default function InterviewWaitingRoomPage({
 	params,
@@ -58,6 +60,7 @@ export default function InterviewWaitingRoomPage({
 		data: interview,
 		isLoading,
 		isError,
+		error,
 	} = useQuery({
 		queryKey: ['interview', interviewId],
 		queryFn: () => getGroupInterviewDetail(Number(interviewId)),
@@ -161,7 +164,11 @@ export default function InterviewWaitingRoomPage({
 	}
 
 	if (isError) {
-		toast.error('면접 정보를 불러오는 중 오류가 발생했어요.')
+		if (error instanceof ApiError) {
+			errorToast(error)
+		} else {
+			toast.error('면접 정보를 불러오는 중 오류가 발생했어요.')
+		}
 		router.replace('/workspace/interviews')
 		return null
 	}

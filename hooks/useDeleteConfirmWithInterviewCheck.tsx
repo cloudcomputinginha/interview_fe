@@ -83,10 +83,6 @@ export function useDeleteConfirmWithInterviewCheck({
 			toast.success(successMessage)
 			onSuccess?.()
 		},
-		onError: () => {
-			toast.error(errorMessage)
-			onError?.()
-		},
 	})
 
 	const openDialog = (item: { id: number; name: string }) => {

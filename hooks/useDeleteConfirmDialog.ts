@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { ApiError } from '@/utils/error/error'
+import { errorToast } from '@/utils/error/errorToast'
 
 interface DeleteConfirmDialogOptions {
 	mutationFn: (id: number) => Promise<any>
@@ -32,9 +34,7 @@ interface DeleteConfirmDialogReturn {
 export function useDeleteConfirmDialog({
 	mutationFn,
 	onSuccess,
-	onError,
 	successMessage = '삭제되었습니다.',
-	errorMessage = '삭제에 실패했습니다.',
 	title = '정말 삭제하시겠습니까?',
 	description,
 	confirmText = '삭제',
@@ -53,10 +53,6 @@ export function useDeleteConfirmDialog({
 			setItemToDelete(null)
 			toast.success(successMessage)
 			onSuccess?.()
-		},
-		onError: () => {
-			toast.error(errorMessage)
-			onError?.()
 		},
 	})
 

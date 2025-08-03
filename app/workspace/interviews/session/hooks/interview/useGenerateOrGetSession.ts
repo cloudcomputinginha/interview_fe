@@ -4,6 +4,8 @@ import { InterviewState } from '@/types/interview/interview'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { ApiResponseInterviewStartResponseDTO } from '@/apis/types/interview-types'
+import { ApiError } from '@/utils/error/error'
+import { errorToast } from '@/utils/error/errorToast'
 
 interface UseGenerateOrGetSessionProps {
 	interviewId: string
@@ -72,8 +74,11 @@ export function useGenerateOrGetSession({
 					isLoading: false,
 				}))
 			} catch (error) {
-				console.error('기존 세션 로드 실패:', error)
-				toast.error('기존 세션을 찾을 수 없어요. 새로운 세션을 생성해요.')
+				if (error instanceof ApiError) {
+					errorToast(error)
+				} else {
+					toast.error('기존 세션을 찾을 수 없어요. 새로운 세션을 생성해요.')
+				}
 				// 새 세션 생성
 				generateSessionMutation.mutate({ memberInterviewId, interviewDetail })
 			}

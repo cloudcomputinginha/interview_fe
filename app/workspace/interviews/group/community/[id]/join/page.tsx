@@ -94,9 +94,6 @@ export default function JoinGroupInterviewPage({
 			)
 			window.location.href = `/workspace/interview/group/community/${postId}`
 		},
-		onError: (err: any) => {
-			alert(err?.message || '면접 참여 신청에 실패했습니다.')
-		},
 	})
 
 	// 에러/호스트 본인 체크 후 뒤로 이동 처리
