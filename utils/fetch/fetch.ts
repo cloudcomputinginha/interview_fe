@@ -1,10 +1,5 @@
 import { reissueToken } from '@/apis'
 import {
-	BadRequestError,
-	NotFoundError,
-	UnProcessableError,
-} from '../error/error'
-import {
 	getAccessToken,
 	getRefreshToken,
 	setAccessToken,
@@ -13,6 +8,7 @@ import {
 	removeRefreshToken,
 } from '../session/token-storage'
 import { toast } from 'sonner'
+import { ApiError } from '../error/error'
 
 const baseServerURL = process.env.NEXT_PUBLIC_SERVER_URL
 const baseAIServerURL = process.env.NEXT_PUBLIC_AI_SERVER_URL
@@ -102,17 +98,7 @@ function createFetch(baseURL: string) {
 		const json = await response.json()
 		console.log(json)
 		if (!response.ok) {
-			if (response.status === 400) {
-				throw new BadRequestError(
-					json.result.flatMap((e: any) => e.message).join(', ') || 'Bad Request'
-				)
-			} else if (response.status === 404) {
-				throw new NotFoundError(json.message || 'Not Found')
-			} else if (response.status === 422) {
-				throw new UnProcessableError(json.message || 'UnProcessable')
-			} else {
-				throw new Error('UnExpected Error')
-			}
+			throw new ApiError(json)
 		}
 		return json
 	}
@@ -130,14 +116,9 @@ function createFetch(baseURL: string) {
 		})
 
 		const text = await response.text()
+		const json = JSON.parse(text)
 		if (!response.ok) {
-			if (response.status === 400) {
-				throw new BadRequestError(JSON.parse(text).message || 'Bad Request')
-			} else if (response.status === 404) {
-				throw new NotFoundError('Not Found')
-			} else {
-				throw new Error('UnExpected Error')
-			}
+			throw new ApiError(json)
 		}
 		return text.length > 0 ? (JSON.parse(text) as T) : response.ok
 	}
@@ -166,16 +147,11 @@ function createFetch(baseURL: string) {
 			body: JSON.stringify(body),
 			headers: { 'Content-Type': 'application/json' },
 		})
-		if (!response.ok) {
-			if (response.status === 400) {
-				throw new BadRequestError('Bad Request')
-			} else if (response.status === 404) {
-				throw new NotFoundError('Not Found')
-			} else {
-				throw new Error('UnExpected Error')
-			}
-		}
 		const text = await response.text()
+		const json = JSON.parse(text)
+		if (!response.ok) {
+			throw new ApiError(json)
+		}
 		return text.length > 0 ? (JSON.parse(text) as T) : response.ok
 	}
 
@@ -188,8 +164,10 @@ function createFetch(baseURL: string) {
 			method: 'DELETE',
 			body: JSON.stringify(body),
 		})
+		const text = await response.text()
+		const json = JSON.parse(text)
 		if (!response.ok) {
-			throw new Error('UnExpected Error')
+			throw new ApiError(json)
 		}
 		return response.ok
 	}

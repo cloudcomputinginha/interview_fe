@@ -1,20 +1,12 @@
-export class BadRequestError extends Error {
-	constructor(message?: string) {
-		super(message || 'Bad Request')
-		this.name = 'BadRequestError'
-	}
-}
+import type { ApiErrorResponse } from '@/apis/types/common-types'
 
-export class NotFoundError extends Error {
-	constructor(message?: string) {
-		super(message || 'Not Found')
-		this.name = 'NotFoundError'
-	}
-}
+export class ApiError extends Error {
+	public code: string
 
-export class UnProcessableError extends Error {
-	constructor(message?: string) {
-		super(message || 'UnProcessable')
-		this.name = 'UnProcessableError'
+	constructor(response: ApiErrorResponse) {
+		super(response.message || 'API Error가 발생했습니다.')
+		this.name = 'API Error'
+		this.code = response.code ?? '코드가 존재하지 않습니다.'
+		this.message = response.message ?? '메세지가 존재하지 않습니다.'
 	}
 }
