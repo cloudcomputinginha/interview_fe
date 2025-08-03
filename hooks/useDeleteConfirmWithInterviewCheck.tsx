@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { checkEntityInterviewConnections } from '@/apis/interview'
@@ -52,7 +52,11 @@ export function useDeleteConfirmWithInterviewCheck({
 	} | null>(null)
 
 	// 연결된 면접 확인 쿼리
-	const { data: interviewData, isLoading: isCheckingInterviews } = useQuery({
+	const {
+		data: interviewData,
+		isLoading: isCheckingInterviews,
+		error,
+	} = useQuery({
 		queryKey: ['connectedInterviews', itemToDelete?.id, itemType],
 		queryFn: () => {
 			if (!itemToDelete?.id) return null
@@ -61,6 +65,12 @@ export function useDeleteConfirmWithInterviewCheck({
 		},
 		enabled: !!itemToDelete?.id && isOpen,
 	})
+
+	useEffect(() => {
+		if (error) {
+			toast.error(error.message)
+		}
+	}, [error])
 
 	const hasConnectedInterviews =
 		interviewData?.result?.length && interviewData.result.length > 0
