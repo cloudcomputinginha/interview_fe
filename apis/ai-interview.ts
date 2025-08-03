@@ -39,17 +39,21 @@ export async function generateQuestions(
 	memberInterviewId: string,
 	payload?: ApiResponseInterviewStartResponseDTO
 ): Promise<InterviewSession> {
+	const noticeUrl =
+		payload?.result?.interview?.noticeUrl ??
+		'https://hanabank.incruit.com/hire/viewhire.asp?projectid=113'
+
 	const updatedPayload = {
 		...payload,
 		result: {
 			...payload?.result,
 			interview: {
 				...payload?.result?.interview,
-				notice_url:
-					'https://hanabank.incruit.com/hire/viewhire.asp?projectid=113',
+				notice_url: noticeUrl,
 			},
 		},
 	}
+
 	const res = await aiFetch.post<any>(
 		`/interview/${interviewId}/${memberInterviewId}/generate_questions`,
 		updatedPayload

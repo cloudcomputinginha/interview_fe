@@ -37,7 +37,7 @@ export default function InterviewPostDetailPage({
 
 	// 로그인 유저 정보
 	const { memberId } = useMemberSession()
-	// 호스트 판별: hostName(닉네임/이름) 비교만 사용
+
 	const isHost = !!(
 		memberId &&
 		post &&
@@ -208,6 +208,14 @@ export default function InterviewPostDetailPage({
 											<h3 className="font-medium mb-2">상세 설명</h3>
 											<p className="text-gray-600 whitespace-pre-line">
 												{post.description}
+											</p>
+										</div>
+									)}
+									{post.noticeUrl && (
+										<div className="pt-4 border-t">
+											<h3 className="font-medium mb-2">모집 공고</h3>
+											<p className="text-gray-600 whitespace-pre-line">
+												{post.noticeUrl}
 											</p>
 										</div>
 									)}
