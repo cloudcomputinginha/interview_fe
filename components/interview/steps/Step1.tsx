@@ -59,11 +59,8 @@ export default function Step1({ form, setForm }: Props) {
 	const set = (patch: Partial<InterviewFormState>) =>
 		setForm(f => ({ ...f, ...patch }))
 
-	const [noticeUrl, setNoticeUrl] = useState('')
-
 	return (
 		<div className="space-y-6">
-			{/* 기업 & 직무 */}
 			<div className="grid md:grid-cols-2 gap-4">
 				<div className="space-y-2">
 					<Label>지원 기업 *</Label>
@@ -119,8 +116,8 @@ export default function Step1({ form, setForm }: Props) {
 			<div className="space-y-2">
 				<Label>채용 공고 링크</Label>
 				<Input
-					value={noticeUrl}
-					onChange={e => setNoticeUrl(e.target.value)}
+					value={form.noticeUrl}
+					onChange={e => set({ noticeUrl: e.target.value })}
 					placeholder="예: https://recruit.hyundai.com/..."
 				/>
 			</div>

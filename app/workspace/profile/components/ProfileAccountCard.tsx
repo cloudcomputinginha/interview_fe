@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { deleteAccount } from '@/apis/member'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { DeleteConfirmDialog } from '@/components/ui/delete-confirm-dialog'
+import { DeleteConfirmDialog } from '@/components/interview/dialog/common/delete-confirm-dialog'
 
 export function ProfileAccountCard() {
 	const router = useRouter()

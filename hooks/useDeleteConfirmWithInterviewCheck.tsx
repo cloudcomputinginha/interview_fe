@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { checkHasConnectedInterview as checkResumeInterview } from '@/apis/resume'
 import { checkHasConnectedInterview as checkCoverletterInterview } from '@/apis/coverletter'
 import Loading from '@/components/loading'
+import { ConnectedInterviewsList } from '@/components/ui/connected-interviews-list'
 
 interface DeleteConfirmWithInterviewCheckOptions {
 	mutationFn: (id: number) => Promise<any>
@@ -28,7 +29,7 @@ interface DeleteConfirmWithInterviewCheckReturn {
 	hasConnectedInterviews: boolean
 	isCheckingInterviews: boolean
 	title: string
-	description: string
+	description: string | React.ReactNode
 	confirmText: string
 	cancelText: string
 }
@@ -107,7 +108,13 @@ export function useDeleteConfirmWithInterviewCheck({
 		}
 
 		if (hasConnectedInterviews) {
-			return `"${itemToDelete?.name}"에 연결된 면접이 있습니다. 삭제하면 연결된 면접에서도 해당 ${itemType === 'resume' ? '이력서' : '자기소개서'}를 사용할 수 없게 됩니다. 정말 삭제하시겠습니까?`
+			return (
+				<ConnectedInterviewsList
+					interviews={interviewData?.result || []}
+					itemName={itemToDelete?.name || ''}
+					itemType={itemType}
+				/>
+			)
 		}
 
 		return (
@@ -126,7 +133,7 @@ export function useDeleteConfirmWithInterviewCheck({
 		hasConnectedInterviews: hasConnectedInterviews || false,
 		isCheckingInterviews,
 		title,
-		description: getDescription() || '',
+		description: getDescription(),
 		confirmText,
 		cancelText,
 	}

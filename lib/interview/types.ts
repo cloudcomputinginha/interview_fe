@@ -8,7 +8,7 @@ export interface InterviewFormState {
 	title: string
 	description: string
 	sessionName: string // 그룹 면접 전용
-
+	noticeUrl: string
 	/* step 2 */
 	resumeId: string | null
 	resumeTitle: string
@@ -42,7 +42,7 @@ export const initialFormState: InterviewFormState = {
 	title: '',
 	description: '',
 	sessionName: '',
-
+	noticeUrl: '',
 	resumeId: null,
 	resumeTitle: '',
 	coverLetterId: null,

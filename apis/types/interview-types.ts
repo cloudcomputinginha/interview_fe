@@ -27,6 +27,7 @@ export interface InterviewCreateDTO {
 	coverLetterId: number
 	coverLetterTitle?: string
 	inviteEmailDTOList?: InviteEmailDTO[]
+	noticeUrl?: string
 }
 
 export interface InviteEmailDTO {
