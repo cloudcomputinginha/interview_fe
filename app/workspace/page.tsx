@@ -26,18 +26,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import Loading from '@/components/loading'
+import { DeleteConfirmDialog } from '@/components/ui/delete-confirm-dialog'
+import { useDeleteConfirmWithInterviewCheck } from '@/hooks/useDeleteConfirmWithInterviewCheck'
 import { CoverLetterForm } from '@/components/cover-letter-form'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +64,7 @@ import {
 import { convertDate } from '@/utils/date/convertDate'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
+import Loading from '@/components/loading'
 
 export default function WorkspacePage() {
 	const [dialogOpen, setDialogOpen] = useState(false)
@@ -86,12 +77,6 @@ export default function WorkspacePage() {
 	const [detailResumeDialogOpen, setDetailResumeDialogOpen] = useState(false)
 	const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null)
 	const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-	const [documentToDelete, setDocumentToDelete] = useState<{
-		id: number
-		type: 'resume' | 'manual'
-		name: string
-	} | null>(null)
 	const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
 	const { memberId } = useMemberSession()
 	const queryClient = useQueryClient()
@@ -189,30 +174,26 @@ export default function WorkspacePage() {
 		},
 	})
 
-	const deleteCoverletterMutation = useMutation({
-		mutationFn: (coverletterId: number) => deleteCoverletter(coverletterId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
-			setDeleteDialogOpen(false)
-			setDocumentToDelete(null)
-			toast.success('자기소개서가 삭제되었습니다.')
-		},
-		onError: () => {
-			toast.error('자기소개서 삭제에 실패했습니다.')
-		},
-	})
-
-	const deleteResumeMutation = useMutation({
-		mutationFn: (resumeId: number) => deleteResume(resumeId),
+	// 이력서 삭제 확인 훅
+	const resumeDeleteDialog = useDeleteConfirmWithInterviewCheck({
+		mutationFn: deleteResume,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['resumeList', memberId] })
-			setDeleteDialogOpen(false)
-			setDocumentToDelete(null)
-			toast.success('이력서가 삭제되었습니다.')
 		},
-		onError: () => {
-			toast.error('이력서 삭제에 실패했습니다.')
+		successMessage: '이력서가 삭제되었습니다.',
+		errorMessage: '이력서 삭제에 실패했습니다.',
+		itemType: 'resume',
+	})
+
+	// 자기소개서 삭제 확인 훅
+	const coverletterDeleteDialog = useDeleteConfirmWithInterviewCheck({
+		mutationFn: deleteCoverletter,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['coverLetterList', memberId] })
 		},
+		successMessage: '자기소개서가 삭제되었습니다.',
+		errorMessage: '자기소개서 삭제에 실패했습니다.',
+		itemType: 'coverletter',
 	})
 
 	const handleDeleteClick = (doc: {
@@ -220,19 +201,12 @@ export default function WorkspacePage() {
 		type: 'resume' | 'manual'
 		name: string
 	}) => {
-		setDocumentToDelete(doc)
-		setDeleteDialogOpen(true)
-		setOpenDropdownId(null) // 드롭다운 닫기
-	}
-
-	const handleConfirmDelete = () => {
-		if (!documentToDelete) return
-
-		if (documentToDelete.type === 'resume') {
-			deleteResumeMutation.mutate(documentToDelete.id)
+		if (doc.type === 'resume') {
+			resumeDeleteDialog.openDialog({ id: doc.id, name: doc.name })
 		} else {
-			deleteCoverletterMutation.mutate(documentToDelete.id)
+			coverletterDeleteDialog.openDialog({ id: doc.id, name: doc.name })
 		}
+		setOpenDropdownId(null) // 드롭다운 닫기
 	}
 
 	if (!memberId) return null
@@ -317,7 +291,11 @@ export default function WorkspacePage() {
 
 					{/* Documents Grid */}
 					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-						{filteredDocuments && filteredDocuments?.length > 0 ? (
+						{coverLetterListLoading || resumeListLoading ? (
+							<div className="col-span-full py-12 text-center text-gray-500">
+								<Loading />
+							</div>
+						) : filteredDocuments && filteredDocuments?.length > 0 ? (
 							filteredDocuments?.map(doc => (
 								<Card
 									key={`${doc.type}-${doc.id}`}
@@ -494,35 +472,28 @@ export default function WorkspacePage() {
 					/>
 				</DialogContent>
 			</Dialog>
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
-						<AlertDialogDescription>
-							"{documentToDelete?.name}" 문서를 삭제하시겠습니까? 이 작업은
-							되돌릴 수 없습니다.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>취소</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleConfirmDelete}
-							disabled={
-								deleteResumeMutation.isPending ||
-								deleteCoverletterMutation.isPending
-							}
-							className="bg-red-600 hover:bg-red-700"
-						>
-							{deleteResumeMutation.isPending ||
-							deleteCoverletterMutation.isPending ? (
-								<Loading variant="danger" />
-							) : (
-								'삭제'
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				isOpen={resumeDeleteDialog.isOpen}
+				onOpenChange={resumeDeleteDialog.closeDialog}
+				title={resumeDeleteDialog.title}
+				description={resumeDeleteDialog.description}
+				onConfirm={resumeDeleteDialog.handleConfirm}
+				isPending={resumeDeleteDialog.isPending}
+				connectedInterviews={resumeDeleteDialog.connectedInterviews}
+				itemName={resumeDeleteDialog.itemToDelete?.name}
+				itemType="resume"
+			/>
+			<DeleteConfirmDialog
+				isOpen={coverletterDeleteDialog.isOpen}
+				onOpenChange={coverletterDeleteDialog.closeDialog}
+				title={coverletterDeleteDialog.title}
+				description={coverletterDeleteDialog.description}
+				onConfirm={coverletterDeleteDialog.handleConfirm}
+				isPending={coverletterDeleteDialog.isPending}
+				connectedInterviews={coverletterDeleteDialog.connectedInterviews}
+				itemName={coverletterDeleteDialog.itemToDelete?.name}
+				itemType="coverletter"
+			/>
 		</>
 	)
 }
@@ -572,7 +543,7 @@ function ResumeDetailView({
 }) {
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ['resumeDetail', resumeId],
-		queryFn: () => getResumeDetail(resumeId, memberId),
+		queryFn: () => getResumeDetail(resumeId),
 		enabled: !!resumeId && !!memberId,
 		select: res => res.result,
 	})
