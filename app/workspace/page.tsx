@@ -333,12 +333,22 @@ export default function WorkspacePage() {
 										</div>
 									</CardContent>
 									<CardFooter className="px-5 py-3 border-t bg-gray-50 flex justify-end">
-										<DropdownMenu>
+										<DropdownMenu
+											open={openDropdownId === doc.id}
+											onOpenChange={open => {
+												setOpenDropdownId(open && doc.id ? doc.id : null)
+											}}
+										>
 											<DropdownMenuTrigger asChild>
 												<Button
 													variant="ghost"
 													size="sm"
 													className="h-8 w-8 p-0"
+													onClick={() => {
+														setOpenDropdownId(
+															openDropdownId === doc.id ? null : doc.id || null
+														)
+													}}
 												>
 													<MoreVertical className="h-4 w-4" />
 												</Button>
@@ -360,6 +370,7 @@ export default function WorkspacePage() {
 																setSelectedCoverLetterId(doc.id!)
 																setDetailDialogOpen(true)
 															}
+															setOpenDropdownId(null)
 														}}
 													>
 														<FileText className="mr-2 h-4 w-4" />
@@ -368,9 +379,10 @@ export default function WorkspacePage() {
 												)}
 												<DropdownMenuItem
 													className="flex items-center"
-													onClick={() =>
+													onClick={() => {
 														toast.info('아직 지원하지 않는 기능입니다.')
-													}
+														setOpenDropdownId(null)
+													}}
 												>
 													<Edit className="mr-2 h-4 w-4" />
 													<span>수정</span>

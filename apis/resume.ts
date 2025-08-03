@@ -7,8 +7,8 @@ import {
 	ApiResponseResumeListDTO,
 } from './types/resume-types'
 
-import { ApiResponseListInterviewGroupCardDTO } from './types/interview-types'
 import { ApiResponseVoid } from './types/common-types'
+import { checkEntityInterviewConnections } from '../utils/api-helpers'
 
 // presigned url 발급
 export async function getPresignedUploadUrl(fileName: string) {
@@ -37,9 +37,7 @@ export async function getResumeList() {
 
 // 이력서에 연결된 면접이 있는지 확인
 export async function checkHasConnectedInterview(resumeId: number) {
-	return serverFetch.get<ApiResponseListInterviewGroupCardDTO>(
-		`/resumes/${resumeId}/interviews`
-	)
+	return checkEntityInterviewConnections('resumes', resumeId)
 }
 
 // 이력서 삭제

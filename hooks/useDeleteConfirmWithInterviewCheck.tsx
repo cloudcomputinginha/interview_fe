@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { checkHasConnectedInterview as checkResumeInterview } from '@/apis/resume'
-import { checkHasConnectedInterview as checkCoverletterInterview } from '@/apis/coverletter'
+import { checkEntityInterviewConnections } from '@/apis/interview'
 import Loading from '@/components/loading'
 import { ConnectedInterviewsList } from '@/components/ui/connected-interviews-list'
 
@@ -57,9 +56,8 @@ export function useDeleteConfirmWithInterviewCheck({
 		queryKey: ['connectedInterviews', itemToDelete?.id, itemType],
 		queryFn: () => {
 			if (!itemToDelete?.id) return null
-			return itemType === 'resume'
-				? checkResumeInterview(itemToDelete.id)
-				: checkCoverletterInterview(itemToDelete.id)
+			const entityType = itemType === 'resume' ? 'resumes' : 'coverletters'
+			return checkEntityInterviewConnections(entityType, itemToDelete.id)
 		},
 		enabled: !!itemToDelete?.id && isOpen,
 	})

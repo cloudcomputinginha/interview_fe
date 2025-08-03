@@ -6,8 +6,8 @@ import {
 	ApiResponseMyCoverletterListDTO,
 } from './types/coverletter-types'
 
-import { ApiResponseListInterviewGroupCardDTO } from './types/interview-types'
 import { ApiResponseVoid } from './types/common-types'
+import { checkEntityInterviewConnections } from '../utils/api-helpers'
 
 // 자기소개서 생성
 export async function createCoverletter(data: CreateCoverletterDTO) {
@@ -31,9 +31,7 @@ export async function findMyCoverletter() {
 
 // 자기소개서에 연결된 면접이 있는지 확인
 export async function checkHasConnectedInterview(coverletterId: number) {
-	return serverFetch.get<ApiResponseListInterviewGroupCardDTO>(
-		`/coverletters/${coverletterId}/interviews`
-	)
+	return checkEntityInterviewConnections('coverletters', coverletterId)
 }
 
 // 자기소개서 삭제
