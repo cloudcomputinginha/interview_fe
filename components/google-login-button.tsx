@@ -1,11 +1,10 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { serverFetch } from '@/utils/fetch/fetch'
 
 export function GoogleLoginButton() {
 	const handleGoogleLogin = () => {
-		window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/GOOGLE?redirect=${process.env.NEXT_PUBLIC_REDIRECT_URL}`
+		window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/GOOGLE?redirect=${process.env.NEXT_PUBLIC_REDIRECT_URL}/auth`
 	}
 
 	return (
