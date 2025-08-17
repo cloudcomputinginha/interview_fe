@@ -37,24 +37,12 @@ function toCamelCaseInterviewSession(raw: any): InterviewSession {
 export async function generateMultiSessionQuestions(
 	interviewId: string,
 	memberInterviewId: string,
-	payload?: ApiResponseInterviewStartResponseDTO
+	payload?: any
 ): Promise<InterviewSession> {
-	const updatedPayload = {
-		...payload,
-		result: {
-			...payload?.result,
-			interview: {
-				...payload?.result?.interview,
-				notice_url:
-					'https://hanabank.incruit.com/hire/viewhire.asp?projectid=113',
-			},
-		},
-	}
-
 	try {
 		const res = await aiFetch.post<any>(
-			`/interview/${interviewId}/${memberInterviewId}/generate_questions`,
-			updatedPayload
+			`/interview/generate_questions`,
+			payload
 		)
 		console.log('멀티 세션 질문 생성 성공:', res)
 		if (typeof res === 'boolean') {
@@ -187,17 +175,15 @@ export async function getMultiSessionById(
 export async function getMultiSessionByInterviewAndMember(
 	interviewId: string,
 	memberInterviewId: string
-): Promise<InterviewSession> {
+): Promise<InterviewSession | null> {
 	console.log('멀티 세션 조회 API 호출:', { interviewId, memberInterviewId })
 
 	try {
-		const res = await aiFetch.get<any>(
-			`/interview/session/${interviewId}/${memberInterviewId}`
-		)
+		const res = await aiFetch.get<any>(`/interview/session/sess_c6105daf`)
 		console.log('멀티 세션 조회 성공:', res)
 		return toCamelCaseInterviewSession(res)
 	} catch (error) {
 		console.error('멀티 세션 조회 실패:', error)
-		throw error
+		return null
 	}
 }
