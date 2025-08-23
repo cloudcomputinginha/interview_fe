@@ -16,8 +16,10 @@ import {
 	ApiResponseMyInterviewListDTO,
 	UpdateDocumentDTO,
 	ApiResponseMemberInterviewDocumentDTO,
+	ApiResponseInterviewGetResponseDTO,
 } from './types/interview-types'
 import { checkEntityInterviewConnections } from '../utils/api-helpers'
+import mockData from './mock.json'
 
 // 면접 생성
 export async function createInterview(data: InterviewCreateDTO) {
@@ -68,6 +70,20 @@ export async function startInterview(interviewId: number) {
 	return serverFetch.get<ApiResponseInterviewStartResponseDTO>(
 		`/interviews/${interviewId}/start`
 	)
+}
+
+export async function getInterview(interviewId: number) {
+	return serverFetch.get<ApiResponseInterviewGetResponseDTO>(
+		`/interviews/${interviewId}`
+	)
+}
+
+export async function getMockInterview(interviewId: number) {
+	return new Promise<ApiResponseInterviewStartResponseDTO>(resolve => {
+		setTimeout(() => {
+			resolve(mockData as unknown as ApiResponseInterviewStartResponseDTO)
+		}, 3000) // 3초 지연
+	})
 }
 
 // 대기실 내 사용자 상태 변경
