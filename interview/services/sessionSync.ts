@@ -1,6 +1,7 @@
 // services/sessionSync.ts
 import { useInterviewStore } from '@/interview/store/useInterviewStore'
-import { generateFollowUpQuestions } from '@/apis/ai-interview'
+import { AudioBus } from '@/interview/audio/audioBus'
+
 export type FollowUpQA = {
 	question: string
 	audio_path: string
@@ -25,6 +26,14 @@ export type InterviewSession = {
 	final_report?: string | null
 }
 
+// ---- S3 풀 URL 헬퍼 ---------------------------------------------------------
+const S3_BASE = (process.env.NEXT_PUBLIC_S3_URL ?? '').replace(/\/$/, '')
+const toFullUrl = (p?: string | null) => {
+	if (!p) return ''
+	if (p.startsWith('http')) return p
+	return `${S3_BASE}/${p.replace(/^\//, '')}`
+}
+
 export function syncStoreFromInterviewSession(s: InterviewSession) {
 	const {
 		setQuestions,
@@ -43,15 +52,20 @@ export function syncStoreFromInterviewSession(s: InterviewSession) {
 	const questions = s.qa_flow.map(q => q.question)
 	setQuestions(sessionId, questions, 'replace')
 
-	// (3) 메인 오디오 경로
+	// (3) 메인 오디오 경로: 스토어 라우트/다운로드 + 프리로드
+	const preloadTasks: Promise<any>[] = []
+
 	s.qa_flow.forEach((q, i) => {
-		if (q.audio_path) {
-			// downloadAudio가 내부에 route를 기록하므로 그대로 사용
-			downloadAudio(sessionId, i, undefined, async () => q.audio_path)
+		const full = toFullUrl(q.audio_path)
+		if (full) {
+			// a) 내부 라우트 생성/저장 (기존 로직)
+			downloadAudio(sessionId, i, undefined, async () => full)
+			// b) 프리로드(다운로드+blob 캐시)
+			preloadTasks.push(AudioBus.preload(full).catch(() => {}))
 		}
 	})
 
-	// (4) 후속질문 텍스트/오디오
+	// (4) 후속질문 텍스트/오디오: 스토어 반영 + 프리로드
 	s.qa_flow.forEach((q, i) => {
 		const fus = q.follow_ups ?? []
 		if (fus && fus.length) {
@@ -61,8 +75,10 @@ export function syncStoreFromInterviewSession(s: InterviewSession) {
 				fus.map(f => f.question)
 			)
 			fus.forEach((f, fIdx) => {
-				if (f.audio_path) {
-					downloadAudio(sessionId, i, fIdx, async () => f.audio_path)
+				const full = toFullUrl(f.audio_path)
+				if (full) {
+					downloadAudio(sessionId, i, fIdx, async () => full)
+					preloadTasks.push(AudioBus.preload(full).catch(() => {}))
 				}
 			})
 		}
@@ -70,6 +86,9 @@ export function syncStoreFromInterviewSession(s: InterviewSession) {
 
 	// (5) 커서 동기화
 	setCurrent(sessionId, s.cursor.q_idx, s.cursor.f_idx)
+
+	// (6) 프리로드는 백그라운드로 처리 (실패 무시)
+	Promise.allSettled(preloadTasks).catch(() => {})
 }
 
 const inflight = new Map<string, Promise<void>>()
@@ -91,6 +110,8 @@ export async function ensureFollowUps(sessionId: string, qIndex: number) {
 
 			const { aiGenerateFollowUps } = await import('@/interview/api/api')
 			const updated = await aiGenerateFollowUps(sessionId, qIndex)
+
+			// ⬇️ 생성 스냅샷 반영 시, 위에서 프리로드까지 자동 실행됨
 			syncStoreFromInterviewSession(updated)
 		} catch (e) {
 			console.error('[ensureFollowUps] failed', e)

@@ -13,6 +13,9 @@ import ParticipantsPanel from '@/interview/components/ParticipantPanel'
 import { AudioIO } from '@/interview/components/AudioIO'
 import InterviewReady from '@/app/workspace/interviews/group/session/components/InterviewReady'
 import { useAutoHydrateFollowUps } from '@/interview/hooks/useAutoHydrateFollowUps'
+import { useAutoPlayQuestionAudio } from '@/interview/hooks/useAutoPlayQuestionAudio'
+import { useAutoPlayFollowUpAudio } from '@/interview/hooks/useAutoPlayFollowUpAudio'
+import AudioOutlet from '@/interview/components/AudioOutlet'
 
 export default function GroupInterviewSessionPage({
 	searchParams,
@@ -66,10 +69,18 @@ export default function GroupInterviewSessionPage({
 
 	const amActive = team?.activePid === String(myMemberInterviewId)
 
-	const hydration = useAutoHydrateFollowUps(sessionsMap, team ?? null, {
-		intervalMs: 1000,
-		maxAttempts: 12, // 12초까지 시도 (원하면 조절)
-	})
+	const autoplayEnabled =
+		isReady && socketStatus === 'open' && status === 'complete'
+
+	// 질문 오디오 자동 재생
+	useAutoPlayQuestionAudio(sessionsMap, team ?? null, autoplayEnabled)
+
+	// 팔로우업 오디오 자동 재생(+동기화 내부 포함)
+	const hydration = useAutoPlayFollowUpAudio(
+		sessionsMap,
+		team ?? null,
+		autoplayEnabled
+	)
 
 	if (!isReady || status !== 'complete' || socketStatus !== 'open') {
 		return (
@@ -154,6 +165,7 @@ export default function GroupInterviewSessionPage({
 					</div>
 				</div>
 			</div>
+			{autoplayEnabled && <AudioOutlet />}
 		</>
 	)
 }
