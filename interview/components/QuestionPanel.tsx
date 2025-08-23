@@ -9,15 +9,16 @@ export default function QuestionPanel({
 	activeMemberId,
 	sessionsMap,
 	team,
+	followUpHydration, // 🔥 추가
 }: {
 	activeMemberId?: string | null
 	sessionsMap: Record<string, string>
 	team: { index: number; fIndexCurrent: number } | null
+	followUpHydration?: { hydrating: boolean; expected: number; current: number }
 }) {
 	const sessionId = activeMemberId ? sessionsMap[activeMemberId] : undefined
 	const qIndex = team?.index ?? -1
 
-	// ✅ selector는 useCallback으로 고정 + 빈배열은 상수 레퍼런스
 	const selectQuestions = useCallback(
 		(s: ReturnType<typeof useInterviewStore.getState>) =>
 			sessionId ? (s.questions[sessionId] ?? EMPTY_STR_ARR) : EMPTY_STR_ARR,
@@ -39,8 +40,12 @@ export default function QuestionPanel({
 		[questions, qIndex]
 	)
 
+	// 🔥 “생성중” 기준: 훅에서 주는 hydrating or (기대한 길이>0 && 현재<기대)
 	const fuGenerating =
-		!!team && team.fIndexCurrent >= 0 && followUps.length === 0
+		!!team &&
+		(followUpHydration?.hydrating ||
+			(!!followUpHydration?.expected &&
+				(followUpHydration.current ?? 0) < followUpHydration.expected))
 
 	return (
 		<div className="space-y-3">

@@ -66,7 +66,10 @@ export default function GroupInterviewSessionPage({
 
 	const amActive = team?.activePid === String(myMemberInterviewId)
 
-	useAutoHydrateFollowUps(sessionsMap, team)
+	const hydration = useAutoHydrateFollowUps(sessionsMap, team ?? null, {
+		intervalMs: 1000,
+		maxAttempts: 12, // 12초까지 시도 (원하면 조절)
+	})
 
 	if (!isReady || status !== 'complete' || socketStatus !== 'open') {
 		return (
@@ -126,6 +129,7 @@ export default function GroupInterviewSessionPage({
 									activeMemberId={team?.activePid}
 									sessionsMap={sessionsMap}
 									team={team ?? null}
+									followUpHydration={hydration}
 								/>
 
 								<div className="mt-6 pt-6 border-t">
