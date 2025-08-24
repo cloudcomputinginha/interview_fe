@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useQuery } from '@tanstack/react-query'
-import { getGroupInterviewDetail } from '@/apis/interview'
+import { getGroupInterviewDetail, getInterview } from '@/apis/interview'
 import { useRouter } from 'next/navigation'
 import { useMemberSession } from '@/components/member-session-context'
 import { useWaitingRoomSocket } from '@/utils/socket/use-waiting-room-socket'
@@ -64,6 +64,13 @@ export default function InterviewWaitingRoomPage({
 	} = useQuery({
 		queryKey: ['interview', interviewId],
 		queryFn: () => getGroupInterviewDetail(Number(interviewId)),
+		select: data => data.result,
+		enabled: !!interviewId,
+	})
+
+	const { data: interviewStartDetail } = useQuery({
+		queryKey: ['interviewStartDetail', interviewId],
+		queryFn: () => getInterview(Number(interviewId)),
 		select: data => data.result,
 		enabled: !!interviewId,
 	})
@@ -134,16 +141,18 @@ export default function InterviewWaitingRoomPage({
 	}, [interview?.startedAt])
 
 	const startInterview = useCallback(() => {
-		if (participants?.length === 0) {
-			toast.error('참가자가 없어요.')
-			router.replace('/workspace/interviews')
-			return null
-		}
+		// if (participants?.length === 0) {
+		// 	toast.error('참가자가 없어요.')
+		// 	router.replace('/workspace/interviews')
+		// 	return null
+		// }
 
 		setIsStarting(true)
 
 		setTimeout(() => {
-			router.replace('/workspace/interviews/group/session')
+			router.replace(
+				`/workspace/interviews/group/session?interviewId=${interviewId}&myMemberInterviewId=${interviewStartDetail?.participants?.[0]?.memberInterviewId}`
+			)
 		}, 3000)
 	}, [participants?.length])
 

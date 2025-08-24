@@ -21,6 +21,10 @@ export function useAudioQueries({ qaFlow }: UseAudioQueriesProps) {
 
 	// 오디오 파일 목록 생성
 	const getAudioFiles = useCallback((qaFlow: QA[]): AudioFile[] => {
+		if (!qaFlow || !Array.isArray(qaFlow) || qaFlow.length === 0) {
+			return []
+		}
+
 		return qaFlow.flatMap((q, qIdx) => {
 			const files: AudioFile[] = []
 
@@ -51,6 +55,10 @@ export function useAudioQueries({ qaFlow }: UseAudioQueriesProps) {
 	// 특정 오디오 키들을 병렬로 로드하는 함수
 	const loadAudioKeys = useCallback(
 		async (keys: string[]) => {
+			if (!qaFlow || !Array.isArray(qaFlow) || qaFlow.length === 0) {
+				return audioUrlMap
+			}
+
 			const audioFiles = getAudioFiles(qaFlow)
 			const targetFiles = audioFiles.filter(file => keys.includes(file.key))
 
@@ -120,6 +128,10 @@ export function useAudioQueries({ qaFlow }: UseAudioQueriesProps) {
 	// 특정 질문의 팔로우업 오디오들을 병렬로 로드하는 함수
 	const loadFollowUpAudios = useCallback(
 		async (questionIdx: number) => {
+			if (!qaFlow || !Array.isArray(qaFlow) || qaFlow.length === 0) {
+				return {}
+			}
+
 			const question = qaFlow[questionIdx]
 			if (!question?.followUps) return {}
 
@@ -145,20 +157,25 @@ export function useAudioQueries({ qaFlow }: UseAudioQueriesProps) {
 
 	// useQueries로 병렬 로딩 (초기 로딩용)
 	const queries = useQueries({
-		queries: unloadedAudioFiles.map(file => ({
-			queryKey: ['audio', file.key, file.path],
-			queryFn: () => preloadAudio(file.path),
-			enabled:
-				!!file.path &&
-				!loadedAudioKeys.has(file.key) &&
-				!pendingAudioKeys.has(file.key),
-			staleTime: 10 * 60 * 1000, // 10분간 캐시
-			gcTime: 30 * 60 * 1000, // 30분간 가비지 컬렉션 방지
-		})),
+		queries:
+			unloadedAudioFiles.length > 0
+				? unloadedAudioFiles.map(file => ({
+						queryKey: ['audio', file.key, file.path],
+						queryFn: () => preloadAudio(file.path),
+						enabled:
+							!!file.path &&
+							!loadedAudioKeys.has(file.key) &&
+							!pendingAudioKeys.has(file.key),
+						staleTime: 10 * 60 * 1000, // 10분간 캐시
+						gcTime: 30 * 60 * 1000, // 30분간 가비지 컬렉션 방지
+					}))
+				: [],
 	})
 
 	// 쿼리 결과를 audioUrlMap에 반영
 	useEffect(() => {
+		if (unloadedAudioFiles.length === 0) return
+
 		const newAudioMap: Record<string, string> = {}
 		const newLoadedKeys: string[] = []
 

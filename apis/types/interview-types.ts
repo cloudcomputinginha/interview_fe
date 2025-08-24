@@ -201,6 +201,13 @@ export interface ApiResponseInterviewStartResponseDTO {
 	result?: InterviewStartResponseDTO
 }
 
+export interface ApiResponseInterviewGetResponseDTO {
+	isSuccess?: boolean
+	code?: string
+	message?: string
+	result?: InterviewStartResponseDTO
+}
+
 export interface InterviewStartResponseDTO {
 	interviewId?: number
 	interview?: InterviewDTO
