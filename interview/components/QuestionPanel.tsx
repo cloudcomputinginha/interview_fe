@@ -2,6 +2,8 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 import { useInterviewStore } from '@/interview/store/useInterviewStore'
 import { EMPTY_STR_ARR } from '@/interview/utils/array'
 
@@ -9,7 +11,7 @@ export default function QuestionPanel({
 	activeMemberId,
 	sessionsMap,
 	team,
-	followUpHydration, // 🔥 추가
+	followUpHydration,
 }: {
 	activeMemberId?: string | null
 	sessionsMap: Record<string, string>
@@ -40,49 +42,116 @@ export default function QuestionPanel({
 		[questions, qIndex]
 	)
 
-	// 🔥 “생성중” 기준: 훅에서 주는 hydrating or (기대한 길이>0 && 현재<기대)
 	const fuGenerating =
 		!!team &&
 		(followUpHydration?.hydrating ||
 			(!!followUpHydration?.expected &&
 				(followUpHydration.current ?? 0) < followUpHydration.expected))
 
-	return (
-		<div className="space-y-3">
-			<div>
-				<h2 className="text-lg font-semibold mb-2">현재 질문</h2>
-				{qIndex >= 0 && currentQ ? (
-					<div className="p-3 rounded border bg-white">
-						<div className="text-sm text-gray-500 mb-1">Q{qIndex + 1}</div>
-						<div className="font-medium">{currentQ}</div>
-					</div>
-				) : (
-					<div className="p-3 rounded border bg-white text-gray-500">
-						{team ? '질문을 불러오는 중…' : '팀 상태 대기…'}
-					</div>
-				)}
-			</div>
+	// 현재 표시할 질문 결정
+	const currentQuestionToShow = useMemo(() => {
+		if (!team || qIndex < 0 || !currentQ) return null
 
-			<div>
-				<h3 className="text-base font-semibold mb-2">꼬리질문</h3>
-				{fuGenerating && (
-					<div className="text-sm text-gray-500 animate-pulse">생성 중… ⏳</div>
+		// 꼬리질문이 있고 현재 꼬리질문 인덱스가 유효한 경우
+		if (
+			followUps.length > 0 &&
+			team.fIndexCurrent >= 0 &&
+			team.fIndexCurrent < followUps.length
+		) {
+			return {
+				type: 'followUp' as const,
+				text: followUps[team.fIndexCurrent],
+				number: `Q${qIndex + 1}-${team.fIndexCurrent + 1}`,
+				isActive: true,
+			}
+		}
+
+		// 메인 질문 표시
+		return {
+			type: 'main' as const,
+			text: currentQ,
+			number: `Q${qIndex + 1}`,
+			isActive: true,
+		}
+	}, [team, qIndex, currentQ, followUps])
+
+	return (
+		<div className="space-y-4">
+			<AnimatePresence mode="wait">
+				{!team ? (
+					<motion.div
+						key="waiting"
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+						className="bg-gray-800 p-4 rounded-lg min-h-[120px] flex items-center justify-center"
+					>
+						<div className="text-sm text-gray-400">팀 상태 대기…</div>
+					</motion.div>
+				) : qIndex < 0 || !currentQ ? (
+					<motion.div
+						key="loading"
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+						className="bg-gray-800 p-4 rounded-lg min-h-[120px] flex items-center justify-center"
+					>
+						<div className="text-sm text-gray-400 mr-2">
+							질문을 불러오는 중...
+						</div>
+						<Loader2 className="animate-spin w-6 h-6 text-[#8FD694]" />
+					</motion.div>
+				) : fuGenerating ? (
+					<motion.div
+						key="generating"
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+						className="bg-gray-800 p-4 rounded-lg min-h-[120px] flex items-center justify-center"
+					>
+						<div className="text-sm text-gray-400 mr-2">
+							꼬리질문을 생성하고 있습니다...
+						</div>
+						<Loader2 className="animate-spin w-6 h-6 text-[#8FD694]" />
+					</motion.div>
+				) : currentQuestionToShow ? (
+					<motion.div
+						key={currentQuestionToShow.number}
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+						className={`p-4 rounded-lg min-h-[120px] flex flex-col justify-center ${
+							currentQuestionToShow.type === 'main'
+								? 'bg-gray-800 border-l-4 border-blue-500'
+								: 'bg-gray-800 border-l-4 border-[#8FD694]'
+						}`}
+					>
+						<div className="flex items-center text-sm text-gray-400 mb-2">
+							<span className="font-medium">
+								{currentQuestionToShow.number}
+							</span>
+						</div>
+						<p className="text-lg font-medium text-gray-100">
+							{currentQuestionToShow.text}
+						</p>
+					</motion.div>
+				) : (
+					<motion.div
+						key="no-question"
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+						className="bg-gray-800 p-4 rounded-lg min-h-[120px] flex items-center justify-center"
+					>
+						<div className="text-sm text-gray-400">질문이 없습니다</div>
+					</motion.div>
 				)}
-				{followUps.length > 0 ? (
-					<ol className="list-decimal pl-5 space-y-1">
-						{followUps.map((f, i) => (
-							<li
-								key={i}
-								className={team?.fIndexCurrent === i ? 'font-semibold' : ''}
-							>
-								{f}
-							</li>
-						))}
-					</ol>
-				) : !fuGenerating ? (
-					<div className="text-sm text-gray-500">아직 없음</div>
-				) : null}
-			</div>
+			</AnimatePresence>
 		</div>
 	)
 }

@@ -1,80 +1,181 @@
-// hooks/usePcmSender.ts
+// interview/hooks/usePcmSender.ts
 'use client'
 import { useEffect, useRef } from 'react'
 
-/** 마이크를 mono 16kHz 16bit PCM으로 변환해 WebSocket으로 바이너리 전송 */
+function downmixMono(L: Float32Array, R?: Float32Array) {
+	if (!R || R.length !== L.length) return L
+	const out = new Float32Array(L.length)
+	for (let i = 0; i < L.length; i++) out[i] = (L[i] + R[i]) * 0.5
+	return out
+}
+
+// 48k → 16k 간단 리샘플
+function resampleTo16k(input: Float32Array, inRate: number) {
+	const outRate = 16000
+	if (inRate === outRate) return input
+	const ratio = outRate / inRate
+	const outLen = Math.round(input.length * ratio)
+	const out = new Float32Array(outLen)
+	for (let i = 0; i < outLen; i++) {
+		const pos = i / ratio
+		const i0 = Math.floor(pos)
+		const i1 = Math.min(i0 + 1, input.length - 1)
+		const f = pos - i0
+		out[i] = input[i0] * (1 - f) + input[i1] * f
+	}
+	return out
+}
+
+function floatToPCM16LE(f32: Float32Array) {
+	const out = new Int16Array(f32.length)
+	for (let i = 0; i < f32.length; i++) {
+		// 살짝 감쇠해 클리핑 여유
+		let s = Math.max(-1, Math.min(1, f32[i] * 0.85))
+		out[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+	}
+	return out
+}
+
+/**
+ * 마이크 → 16kHz 모노 → 20ms(=320샘플) 고정 프레임으로 WS 전송
+ * - 고정 프레임이면 수신 쪽 타임스케일이 절대 느려지지 않습니다.
+ * - 로컬 모니터링은 완전히 음소거(에코/지연 합성 방지)
+ */
 export function usePcmSender(ws: WebSocket | null, enabled: boolean) {
 	const acRef = useRef<AudioContext | null>(null)
-	const srcRef = useRef<MediaStreamAudioSourceNode | null>(null)
 	const procRef = useRef<ScriptProcessorNode | null>(null)
-	const streamRef = useRef<MediaStream | null>(null)
+	const srcRef = useRef<MediaStreamAudioSourceNode | null>(null)
+	const hpRef = useRef<BiquadFilterNode | null>(null)
+	const lpRef = useRef<BiquadFilterNode | null>(null)
+	const muteRef = useRef<GainNode | null>(null)
+
+	// 16kHz에서 20ms 프레임 크기
+	const FRAME_SAMPLES = 320
+
+	// 16kHz Float32 누적 버퍼
+	const accumRef = useRef<Float32Array>(new Float32Array(0))
 
 	useEffect(() => {
 		if (!enabled || !ws) return
-		let closed = false
+		ws.binaryType = 'arraybuffer'
+		let stopped = false
 
 		;(async () => {
-			// 1) 마이크 권한 & 오디오 컨텍스트(16k)
-			const ac = new AudioContext({ sampleRate: 16000 })
+			const Ctx = window.AudioContext || (window as any).webkitAudioContext
+			const ac = acRef.current ?? new Ctx()
 			acRef.current = ac
-			const stream = await navigator.mediaDevices.getUserMedia({
-				audio: {
-					channelCount: 1,
-					noiseSuppression: true,
-					echoCancellation: true,
-					autoGainControl: true,
-				},
-			})
-			streamRef.current = stream
+			await ac.resume().catch(() => {})
+
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 			const src = ac.createMediaStreamSource(stream)
 			srcRef.current = src
 
-			// 2) ScriptProcessor로 프레임 단위 콜백 (간단 구현; Worklet로 대체 가능)
-			const proc = ac.createScriptProcessor(4096, 1, 1)
+			// DC 제거 + 앨리어싱 억제
+			const hp = ac.createBiquadFilter()
+			hp.type = 'highpass'
+			hp.frequency.value = 20
+			hp.Q.value = Math.SQRT1_2
+			hpRef.current = hp
+
+			const lp = ac.createBiquadFilter()
+			lp.type = 'lowpass'
+			lp.frequency.value = 7000
+			lp.Q.value = Math.SQRT1_2
+			lpRef.current = lp
+
+			// 지연 줄이기 위해 1024 샘플 처리
+			const proc = ac.createScriptProcessor(1024, 2, 1)
 			procRef.current = proc
-			proc.onaudioprocess = e => {
-				if (closed || ws.readyState !== WebSocket.OPEN) return
-				const ch0 = e.inputBuffer.getChannelData(0) // Float32 [-1,1]
-				const pcm = new Int16Array(ch0.length)
-				for (let i = 0; i < ch0.length; i++) {
-					const s = Math.max(-1, Math.min(1, ch0[i]))
-					pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff
-				}
-				// 3) 그대로 바이너리 전송
-				ws.send(pcm.buffer)
+
+			// 로컬 모니터 완전 음소거
+			const mute = ac.createGain()
+			mute.gain.value = 0
+			muteRef.current = mute
+			proc.connect(mute).connect(ac.destination)
+
+			proc.onaudioprocess = () => {
+				if (stopped || ws.readyState !== WebSocket.OPEN) return
+				const inputL = proc.bufferSize
+					? proc.context.createBuffer(2, proc.bufferSize, ac.sampleRate)
+					: null
+				// ScriptProcessorNode는 e.inputBuffer를 이벤트에서 주는데
+				// 일부 브라우저 타입 이슈 회피 위해 getChannelData를 직접 가져옵니다.
+				// (정석: e: AudioProcessingEvent → e.inputBuffer.getChannelData)
 			}
 
-			src.connect(proc)
-			// Safari 등 일부 브라우저에서 연결 필요
-			proc.connect(ac.destination)
-		})()
+			// 표준 이벤트 버전
+			;(proc as any).onaudioprocess = (e: AudioProcessingEvent) => {
+				if (stopped || ws.readyState !== WebSocket.OPEN) return
+				const L = e.inputBuffer.getChannelData(0)
+				const R =
+					e.inputBuffer.numberOfChannels > 1
+						? e.inputBuffer.getChannelData(1)
+						: undefined
+				const mono = downmixMono(L, R)
+
+				// 48k 등 → 16k 리샘플
+				const mono16k = resampleTo16k(mono, ac.sampleRate)
+
+				// 누적 버퍼에 이어붙이기
+				const prev = accumRef.current
+				const appended = new Float32Array(prev.length + mono16k.length)
+				appended.set(prev, 0)
+				appended.set(mono16k, prev.length)
+				accumRef.current = appended
+
+				// 320샘플 단위로 끊어서 전송
+				while (accumRef.current.length >= FRAME_SAMPLES) {
+					const frame = accumRef.current.subarray(0, FRAME_SAMPLES)
+					const rest = accumRef.current.subarray(FRAME_SAMPLES)
+					accumRef.current = new Float32Array(rest.length)
+					accumRef.current.set(rest, 0)
+
+					const int16 = floatToPCM16LE(frame)
+					try {
+						ws.send(int16.buffer)
+					} catch {
+						/* ignore */
+					}
+				}
+			}
+
+			// 체인 연결
+			src.connect(hp).connect(lp).connect(proc)
+		})().catch(console.error)
 
 		return () => {
-			closed = true
+			stopped = true
 			try {
 				procRef.current?.disconnect()
-			} catch (e) {
-				console.warn('usePcmSender: proc.disconnect', e)
+			} catch {
+				console.error('소켓 연결 해제 실패')
+			}
+			try {
+				muteRef.current?.disconnect()
+			} catch {
+				console.error('소켓 연결 해제 실패')
+			}
+			try {
+				lpRef.current?.disconnect()
+			} catch {
+				console.error('소켓 연결 해제 실패')
+			}
+			try {
+				hpRef.current?.disconnect()
+			} catch {
+				console.error('소켓 연결 해제 실패')
 			}
 			try {
 				srcRef.current?.disconnect()
-			} catch (e) {
-				console.warn('usePcmSender: src.disconnect', e)
-			}
-			try {
-				streamRef.current?.getTracks().forEach(t => t.stop())
-			} catch (e) {
-				console.warn('usePcmSender: stream.stop', e)
-			}
-			try {
-				acRef.current?.close()
-			} catch (e) {
-				console.warn('usePcmSender: ac.close', e)
+			} catch {
+				console.error('소켓 연결 해제 실패')
 			}
 			procRef.current = null
+			muteRef.current = null
+			lpRef.current = null
+			hpRef.current = null
 			srcRef.current = null
-			streamRef.current = null
-			acRef.current = null
+			accumRef.current = new Float32Array(0)
 		}
-	}, [enabled, ws])
+	}, [ws, enabled])
 }
